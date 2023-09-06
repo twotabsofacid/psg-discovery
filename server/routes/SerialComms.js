@@ -8,7 +8,7 @@ class SerialComms {
   constructor() {
     this.port = new SerialPort({
       path: '/dev/ttyACM0',
-      badRate: 11520,
+      baudRate: 11520,
       autoOpen: false
     });
     this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\n' }));
@@ -30,11 +30,30 @@ class SerialComms {
       const path = '/dev/null';
       SerialPortMock.binding.createPort(path);
       this.port = new SerialPortMock({ path, baudRate: 11520 });
+      console.log('Established Mock Serialport connection');
     });
   }
   addRouteListeners() {
     router.all('/', (req, res) => {
-      res.status(200).send({ message: 'OK' });
+      res.status(200).send({ message: 'OK, but nothing to see here' });
+    });
+    router.post('/frequency', (req, res) => {
+      const freq = req.fields.frequency;
+      const id = req.fields.id;
+      // Send the frequency to voice ID = id
+      res.status(200).send({
+        message: 'OK, hit frequency, not doing anything right now though'
+      });
+    });
+    router.post('/volume', (req, res) => {
+      console.log(req.fields);
+      const vol = req.fields.volume;
+      const id = req.fields.id;
+      console.log(`Should set ID: ${id} to Volume: ${vol}`);
+      // Send the volume to voice ID = id
+      res.status(200).send({
+        message: 'OK, hit volume, not doing anything right now though'
+      });
     });
   }
   async start() {

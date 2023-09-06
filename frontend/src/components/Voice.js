@@ -1,7 +1,10 @@
-export default function Voice() {
+import Sequencer from '@/helpers/Sequencer';
+
+export default function Voice({ id }) {
   return (
-    <main>
-      <h1>Something goes here</h1>
+    <main className="h-auto">
+      <h1>Voice {id}</h1>
+      <Sequencer id={id} />
     </main>
   );
 }

@@ -1,12 +1,21 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
+const formidableMiddleware = require('express-formidable');
 const http = require('node:http');
+const path = require('node:path');
 const { SerialComms } = require('./routes/SerialComms');
 const port = process.env.PORT ?? '1337';
 
 class Server {
   constructor() {
     this.app = express();
+    this.app.use(cors());
+    this.app.use(
+      formidableMiddleware({
+        uploadDir: path.join(__dirname, 'tmp')
+      })
+    );
     this.server = http.createServer(this.app);
     this.setup();
     this.addRoutes();
@@ -32,3 +41,5 @@ class Server {
     });
   }
 }
+
+new Server();

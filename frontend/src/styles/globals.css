@@ -6,14 +6,7 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --form-control-color: 255, 0, 0;
 }
 
 body {
@@ -24,4 +17,42 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  margin: 0;
+  font: inherit;
+  color: currentColor;
+  border: 0.15em solid currentColor;
+  border-radius: 0.15em;
+  transform: translateY(-0.075em);
+  display: grid;
+  place-content: center;
+  width: calc(80vw/16 - 10px);
+  height: 24px;
+  margin: 1px;
+  cursor: pointer;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: calc(80vw/16 - 14px);
+  height: 20px;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em var(--form-control-color);
+  background-color: rgb(25, 200, 95);
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.tick {
+  @apply w-[80%] h-0 pb-[80%] bg-yellow-300 rounded-full m-[10%];
+}
+
+.tick-active {
+  @apply bg-blue-400;
 }
