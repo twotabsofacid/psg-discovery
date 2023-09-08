@@ -38,8 +38,9 @@ class SerialComms {
       res.status(200).send({ message: 'OK, but nothing to see here' });
     });
     router.post('/frequency', (req, res) => {
-      const freq = req.fields.frequency;
+      const frequency = req.fields.frequency;
       const id = req.fields.id;
+      console.log(`Should set ID: ${id} to Frequency: ${frequency}`);
       // Send the frequency to voice ID = id
       res.status(200).send({
         message: 'OK, hit frequency, not doing anything right now though'
@@ -49,10 +50,19 @@ class SerialComms {
       console.log(req.fields);
       const vol = req.fields.volume;
       const id = req.fields.id;
+      const frequency = req.fields.frequency;
       console.log(`Should set ID: ${id} to Volume: ${vol}`);
       // Send the volume to voice ID = id
       res.status(200).send({
         message: 'OK, hit volume, not doing anything right now though'
+      });
+    });
+    router.all('/noise/:toggle', (req, res) => {
+      console.log(req.params.toggle);
+      console.log(`Should set Noise Toggle to: ${req.params.toggle}`);
+      // Send the volume to voice ID = id
+      res.status(200).send({
+        message: 'OK, hit noise toggle, not doing anything right now though'
       });
     });
   }
