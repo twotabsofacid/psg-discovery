@@ -22,6 +22,15 @@ export default function Sequencer({ id, globalToggle }) {
       setActiveTick(0);
       activeTickRef.current = 0;
       transportRef.current = null;
+      setTimeout(() => {
+        setVolume(15)
+          .then((data) => {
+            console.log(data);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }, 500);
     } else {
       setTransportActive(true);
       transportRef.current = setInterval(() => {
@@ -37,6 +46,27 @@ export default function Sequencer({ id, globalToggle }) {
     checkboxesRef.current[x][y].on = !checkboxesRef.current[x][y].on;
     console.log(checkboxesRef);
   };
+  const setVolume = async (level) => {
+    return new Promise((resolve, reject) => {
+      axios({
+        method: 'post',
+        url: 'http://localhost:1337/serial/volume',
+        data: {
+          volume: level,
+          id: id,
+          frequency: frequencyRef.current
+        }
+      })
+        .then((res) => {
+          console.log('got response', res.data);
+          resolve(res.data);
+        })
+        .catch((err) => {
+          console.log('got error', err);
+          reject(err);
+        });
+    });
+  };
   useEffect(() => {
     if (!globalToggle) {
       setTransportActive(false);
@@ -44,6 +74,15 @@ export default function Sequencer({ id, globalToggle }) {
       setActiveTick(0);
       activeTickRef.current = 0;
       transportRef.current = null;
+      setTimeout(() => {
+        setVolume(15)
+          .then((data) => {
+            console.log(data);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }, 500);
     } else {
       setTransportActive(true);
       transportRef.current = setInterval(() => {
@@ -63,20 +102,12 @@ export default function Sequencer({ id, globalToggle }) {
     if (volToPlay) {
       // TODO SEND AXIOS POST REQUEST TO BACK END,
       // PLAY VOICE `ID` FREQ AT VOL
-      axios({
-        method: 'post',
-        url: 'http://localhost:1337/serial/volume',
-        data: {
-          volume: 15 - volToPlay.row,
-          id: id,
-          frequency: frequencyRef.current
-        }
-      })
-        .then((res) => {
-          console.log('got response', res.data);
+      setVolume(volToPlay.row)
+        .then((data) => {
+          console.log(data);
         })
         .catch((err) => {
-          console.log('got error', err);
+          console.log(err);
         });
     }
   }, [activeTick]);
@@ -111,6 +142,13 @@ export default function Sequencer({ id, globalToggle }) {
     })
       .then((res) => {
         console.log('got response', res.data);
+        setVolume(15)
+          .then((data) => {
+            console.log(data);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       })
       .catch((err) => {
         console.log('got error', err);
