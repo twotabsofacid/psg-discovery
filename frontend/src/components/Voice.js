@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 const maxBpm = 360;
-const minFreq = 62;
-const maxFreq = 15625;
+const minFreq = 0;
+const maxFreq = 1023;
 
 export default function Sequencer({ id, globalToggle }) {
   const [checkboxes, setCheckboxes] = useState([]);

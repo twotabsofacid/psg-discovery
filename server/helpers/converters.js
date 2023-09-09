@@ -32,7 +32,7 @@ const frequencyToHex = (freq) => {
   return [parseInt(firstHexNum, 16) + 0x80, parseInt(secondHexNum, 16)];
 };
 
-const numToHex = (numToSend) => {
+const numToHex = (voiceNum, numToSend) => {
   // 4 to 1023
   const binaryToSend = (numToSend >>> 0).toString(2);
   const binaryToSendArr = binaryToSend.toString().padStart(10, '0').split('');
@@ -44,7 +44,13 @@ const numToHex = (numToSend) => {
     .toString(16)
     .toUpperCase();
   console.log('NUM TO SEND', numToSend, firstHexNum, secondHexNum);
-  return [parseInt(firstHexNum, 16) + 0x80, parseInt(secondHexNum, 16)];
+  if (voiceNum === 0) {
+    return [parseInt(firstHexNum, 16) + 0x80, parseInt(secondHexNum, 16)];
+  } else if (voiceNum === 1) {
+    return [parseInt(firstHexNum, 16) + 0xa0, parseInt(secondHexNum, 16)];
+  } else {
+    return [parseInt(firstHexNum, 16) + 0xc0, parseInt(secondHexNum, 16)];
+  }
 };
 
 module.exports = { numToHex, frequencyToHex, toBinary };
