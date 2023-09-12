@@ -14,7 +14,19 @@ const wait = (timeout) => {
 export default function Home() {
   const [globalToggle, setGlobalToggle] = useState(false);
   const [download, setDownload] = useState(0);
+  const [dataVoiceOne, setDataVoiceOne] = useState(null);
+  const [dataVoiceTwo, setDataVoiceTwo] = useState(null);
+  const [dataVoiceThree, setDataVoiceThree] = useState(null);
   const downloadRef = useRef(null);
+  const dlAnchorRef = useRef(null);
+  const onReaderLoad = (e) => {
+    if (e.target.result) {
+      var obj = JSON.parse(e.target.result);
+      setDataVoiceOne(obj[0]);
+      setDataVoiceTwo(obj[1]);
+      setDataVoiceThree(obj[2]);
+    }
+  };
   return (
     <main className="flex flex-col">
       <section className="flex m-3 items-center justify-center">
@@ -47,6 +59,12 @@ export default function Home() {
             })
               .then((res) => {
                 console.log(res.data);
+                var dataStr =
+                  'data:text/json;charset=utf-8,' +
+                  encodeURIComponent(JSON.stringify(res.data.data));
+                dlAnchorRef.current.setAttribute('href', dataStr);
+                dlAnchorRef.current.setAttribute('download', 'sequence.json');
+                dlAnchorRef.current.click();
               })
               .catch((err) => {
                 console.log('we got error', err);
@@ -55,6 +73,18 @@ export default function Home() {
         >
           Download
         </button>
+        <input
+          type="file"
+          id="myFile"
+          name="filename"
+          className="p-3 bg-yellow-200 mx-3"
+          onChange={(e) => {
+            console.log('what the fuck', e);
+            var reader = new FileReader();
+            reader.onload = onReaderLoad;
+            reader.readAsText(e.target.files[0]);
+          }}
+        />
       </section>
       <section className="flex flex-col">
         <Voice id={0} globalToggle={globalToggle} download={download} />
@@ -62,6 +92,9 @@ export default function Home() {
         <Voice id={2} globalToggle={globalToggle} download={download} />
         <Noise />
       </section>
+      <a href="" ref={dlAnchorRef} className="hidden">
+        DL
+      </a>
     </main>
   );
 }
