@@ -5,6 +5,7 @@ const formidableMiddleware = require('express-formidable');
 const http = require('node:http');
 const path = require('node:path');
 const { SerialComms } = require('./routes/SerialComms');
+const { Data } = require('./routes/Data');
 const port = process.env.PORT ?? '1337';
 
 class Server {
@@ -31,6 +32,7 @@ class Server {
   }
   addRoutes() {
     this.app.use('/serial', new SerialComms());
+    this.app.use('/data', new Data());
     this.app.use('*', (req, res) => {
       res.status(200).send({ message: 'Ok, but nothing to see here' });
     });

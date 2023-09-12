@@ -4,7 +4,7 @@ const maxBpm = 360;
 const minFreq = 0;
 const maxFreq = 1023;
 
-export default function Sequencer({ id, globalToggle }) {
+export default function Sequencer({ id, globalToggle, download }) {
   const [checkboxes, setCheckboxes] = useState([]);
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
@@ -154,6 +154,24 @@ export default function Sequencer({ id, globalToggle }) {
         console.log('got error', err);
       });
   }, [frequency]);
+  useEffect(() => {
+    // Store the data on the back end...
+    console.log('we should store stuff on the back end...');
+    axios({
+      method: 'post',
+      url: 'http://localhost:1337/data/store',
+      data: {
+        id: id,
+        sequence: checkboxesRef.current
+      }
+    })
+      .then((res) => {
+        console.log(res);
+      })
+      .catch((err) => {
+        console.log('error', err);
+      });
+  }, [download]);
   /**
    * Create boxes
    */
