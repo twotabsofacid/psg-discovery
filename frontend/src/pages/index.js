@@ -79,17 +79,33 @@ export default function Home() {
           name="filename"
           className="p-3 bg-yellow-200 mx-3"
           onChange={(e) => {
-            console.log('what the fuck', e);
             var reader = new FileReader();
             reader.onload = onReaderLoad;
-            reader.readAsText(e.target.files[0]);
+            if (typeof e.target.files[0] === 'object') {
+              reader.readAsText(e.target.files[0]);
+            }
           }}
         />
       </section>
       <section className="flex flex-col">
-        <Voice id={0} globalToggle={globalToggle} download={download} />
-        <Voice id={1} globalToggle={globalToggle} download={download} />
-        <Voice id={2} globalToggle={globalToggle} download={download} />
+        <Voice
+          id={0}
+          globalToggle={globalToggle}
+          download={download}
+          data={dataVoiceOne}
+        />
+        <Voice
+          id={1}
+          globalToggle={globalToggle}
+          download={download}
+          data={dataVoiceTwo}
+        />
+        <Voice
+          id={2}
+          globalToggle={globalToggle}
+          download={download}
+          data={dataVoiceThree}
+        />
         <Noise />
       </section>
       <a href="" ref={dlAnchorRef} className="hidden">
