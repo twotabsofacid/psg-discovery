@@ -40,11 +40,10 @@ export default function Sequencer({ id, globalToggle, download, data }) {
     }
   };
   const toggleBox = (boxValue) => {
-    console.log('should toggle', boxValue);
     let x = parseInt(boxValue.split(',')[0]);
     let y = parseInt(boxValue.split(',')[1]);
     checkboxesRef.current[x][y].on = !checkboxesRef.current[x][y].on;
-    console.log(checkboxesRef);
+    setCheckboxes([...checkboxesRef.current]);
   };
   const setVolume = async (level) => {
     return new Promise((resolve, reject) => {
@@ -98,7 +97,6 @@ export default function Sequencer({ id, globalToggle, download, data }) {
     const volToPlay = checkboxesRef.current[activeTick]?.find((box) => {
       return box.on;
     });
-    console.log('WE SHOULD PLAY', volToPlay);
     if (volToPlay) {
       // TODO SEND AXIOS POST REQUEST TO BACK END,
       // PLAY VOICE `ID` FREQ AT VOL
@@ -154,6 +152,9 @@ export default function Sequencer({ id, globalToggle, download, data }) {
         console.log('got error', err);
       });
   }, [frequency]);
+  const updateBoxes = () => {
+    console.log('we should update boxes idk');
+  };
   /**
    * DOWNLOAD
    * Store stuff in storage on back end
