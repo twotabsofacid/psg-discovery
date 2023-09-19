@@ -67,10 +67,29 @@ class SerialComms {
     });
     router.all('/noise/:toggle', (req, res) => {
       console.log(req.params.toggle);
-      console.log(`Should set Noise Toggle to: ${req.params.toggle}`);
+      console.log(`Should set Noise to on or off: ${req.params.toggle}`);
       // Send the volume to voice ID = id
       res.status(200).send({
-        message: 'OK, hit noise toggle, not doing anything right now though'
+        message:
+          'OK, hit noise on/off toggle, not doing anything right now though'
+      });
+    });
+    router.all('/noise/type/:toggle', (req, res) => {
+      console.log(req.params.toggle);
+      console.log(`Should set Noise Type to: ${req.params.toggle}`);
+      // Send the volume to voice ID = id
+      res.status(200).send({
+        message:
+          'OK, hit noise type toggle, not doing anything right now though'
+      });
+    });
+    router.all('/noise/pitch/:toggle', (req, res) => {
+      console.log(req.params.toggle);
+      console.log(`Should set Noise Pitch to: ${req.params.toggle}`);
+      // Send the volume to voice ID = id
+      res.status(200).send({
+        message:
+          'OK, hit noise pitch toggle, not doing anything right now though'
       });
     });
   }
