@@ -68,6 +68,19 @@ class SerialComms {
     router.all('/noise/:toggle', (req, res) => {
       console.log(req.params.toggle);
       console.log(`Should set Noise to on or off: ${req.params.toggle}`);
+      let bufferMessage;
+      if (req.params.toggle === 'on') {
+        bufferMessage = Buffer.from(['0xff'], 'hex');
+      } else {
+        bufferMessage = Buffer.from(['0xf0'], 'hex');
+      }
+      console.log('about to write it!!!', bufferMessage);
+      this.port.write(bufferMessage, (err) => {
+        if (err) {
+          return console.log('Error on write: ', err.message);
+        }
+        console.log('message written');
+      });
       // Send the volume to voice ID = id
       res.status(200).send({
         message:
