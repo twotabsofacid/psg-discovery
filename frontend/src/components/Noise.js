@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 export default function Noise() {
+  const noiseOn = useRef(false);
+  const noiseType = useRef('white');
+  const noiseShift = useRef('low');
   const noiseOnOffChange = (e) => {
+    noiseOn.current = e.target.checked ? true : false;
     axios({
-      method: 'get',
-      url: `http://localhost:1337/serial/noise/${
-        e.target.checked ? 'on' : 'off'
-      }`
+      method: 'post',
+      url: `http://localhost:1337/serial/noise`,
+      data: {
+        on: noiseOn.current,
+        noiseType: noiseType.current,
+        noiseShift: noiseShift.current
+      }
     })
       .then((res) => {
         console.log(res.data);
@@ -16,11 +23,15 @@ export default function Noise() {
       });
   };
   const noiseTypeChange = (e) => {
+    noiseType.current = e.target.checked ? 'periodic' : 'white';
     axios({
-      method: 'get',
-      url: `http://localhost:1337/serial/noise/type/${
-        e.target.checked ? 'periodic' : 'white'
-      }`
+      method: 'post',
+      url: `http://localhost:1337/serial/noise`,
+      data: {
+        on: noiseOn.current,
+        noiseType: noiseType.current,
+        noiseShift: noiseShift.current
+      }
     })
       .then((res) => {
         console.log(res.data);
@@ -29,15 +40,19 @@ export default function Noise() {
         console.log('got error', err);
       });
   };
-  const noisePitchChange = (e) => {
-    console.log(e.target.id);
-    const pitchType = e.target.id.split('-')[1];
+  const noiseShiftChange = (e) => {
+    noiseShift.current = e.target.id.split('-')[1];
     axios({
       method: 'post',
-      url: `http://localhost:1337/serial/noise/pitch/${pitchType}`
+      url: `http://localhost:1337/serial/noise`,
+      data: {
+        on: noiseOn.current,
+        noiseType: noiseType.current,
+        noiseShift: noiseShift.current
+      }
     })
       .then((res) => {
-        console.log('got response', res.data);
+        console.log(res.data);
       })
       .catch((err) => {
         console.log('got error', err);
@@ -79,36 +94,45 @@ export default function Noise() {
             <div className="flex justify-items-center items-center">
               <input
                 type="radio"
-                id="pitch-low"
-                name="pitch-val"
-                onChange={noisePitchChange}
+                id="shift-low"
+                name="shift-val"
+                onChange={noiseShiftChange}
               />
-              <label className="ml-2" htmlFor="pitch-low">
+              <label className="ml-2" htmlFor="shift-low">
                 low
               </label>
             </div>
-
             <div className="flex justify-items-center items-center">
               <input
                 type="radio"
-                id="pitch-med"
-                name="pitch-val"
-                onChange={noisePitchChange}
+                id="shift-med"
+                name="shift-val"
+                onChange={noiseShiftChange}
               />
-              <label className="ml-2" htmlFor="pitch-med">
+              <label className="ml-2" htmlFor="shift-med">
                 medium
               </label>
             </div>
-
             <div className="flex justify-items-center items-center">
               <input
                 type="radio"
-                id="pitch-high"
-                name="pitch-val"
-                onChange={noisePitchChange}
+                id="shift-high"
+                name="shift-val"
+                onChange={noiseShiftChange}
               />
-              <label className="ml-2" htmlFor="pitch-high">
+              <label className="ml-2" htmlFor="shift-high">
                 high
+              </label>
+            </div>
+            <div className="flex justify-items-center items-center">
+              <input
+                type="radio"
+                id="shift-gen3"
+                name="shift-val"
+                onChange={noiseShiftChange}
+              />
+              <label className="ml-2" htmlFor="shift-gen3">
+                Gen 3
               </label>
             </div>
           </fieldset>

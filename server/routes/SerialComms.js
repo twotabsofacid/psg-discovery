@@ -65,49 +65,55 @@ class SerialComms {
         message: 'OK, hit volume, not doing anything right now though'
       });
     });
-    router.all('/noise/:toggle', (req, res) => {
-      console.log(req.params.toggle);
-      console.log(`Should set Noise to on or off: ${req.params.toggle}`);
+    router.post('/noise', async (req, res) => {
+      const noiseOn = req.fields.on;
+      const noiseType = req.fields.noiseType;
+      const noiseShift = req.fields.noiseShift;
+      console.log(noiseOn, noiseType, noiseShift);
       let bufferMessage;
-      if (req.params.toggle === 'on') {
-        bufferMessage = Buffer.from(['0xff'], 'hex');
-      } else {
+      if (noiseOn) {
         bufferMessage = Buffer.from(['0xf0'], 'hex');
+      } else {
+        bufferMessage = Buffer.from(['0xff'], 'hex');
       }
-      console.log('about to write it!!!', bufferMessage);
+      console.log('about to write first part of it!!!', bufferMessage);
       this.port.write(bufferMessage, (err) => {
         if (err) {
           return console.log('Error on write: ', err.message);
         }
         console.log('message written');
       });
-      // Send the volume to voice ID = id
-      res.status(200).send({
-        message:
-          'OK, hit noise on/off toggle, not doing anything right now though'
+      await wait(200);
+      let hexToSend = noiseType === 'white' ? 0xe4 : 0xe0;
+      hexToSend =
+        '0x' +
+        (
+          hexToSend +
+          (noiseShift === 'gen3'
+            ? 3
+            : noiseShift === 'high'
+            ? 2
+            : noiseShift === 'med'
+            ? 1
+            : 0)
+        ).toString(16);
+      console.log('what is hex to send', hexToSend);
+      bufferMessage = Buffer.from([hexToSend], 'hex');
+      console.log('about to write second part of it!!!', bufferMessage);
+      this.port.write(bufferMessage, (err) => {
+        if (err) {
+          return console.log('Error on write: ', err.message);
+        }
+        console.log('message written');
       });
-    });
-    router.all('/noise/type/:toggle', (req, res) => {
-      console.log(req.params.toggle);
-      console.log(`Should set Noise Type to: ${req.params.toggle}`);
-      // Send the volume to voice ID = id
+      // Do a bunch of math here...
       res.status(200).send({
-        message:
-          'OK, hit noise type toggle, not doing anything right now though'
-      });
-    });
-    router.all('/noise/pitch/:toggle', (req, res) => {
-      console.log(req.params.toggle);
-      console.log(`Should set Noise Pitch to: ${req.params.toggle}`);
-      // Send the volume to voice ID = id
-      res.status(200).send({
-        message:
-          'OK, hit noise pitch toggle, not doing anything right now though'
+        message: 'OK, change noise'
       });
     });
   }
   async start() {
-    console.log('waiting five seconds...');
+    console.log('waiting two seconds...');
     await wait(2000);
     console.log('opening port');
     this.port.open();
