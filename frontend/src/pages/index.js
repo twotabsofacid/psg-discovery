@@ -106,7 +106,7 @@ export default function Home() {
           download={download}
           data={dataVoiceThree}
         />
-        <Noise />
+        <Noise globalToggle={globalToggle} />
       </section>
       <a href="" ref={dlAnchorRef} className="hidden">
         DL

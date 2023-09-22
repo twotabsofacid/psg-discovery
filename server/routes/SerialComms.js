@@ -59,23 +59,33 @@ class SerialComms {
       const volume = req.fields.volume;
       const id = req.fields.id;
       console.log(`Should set ID: ${id} to Volume: ${volume}`);
-      this.sendVolumeToVoice(id, volume);
+      if (id < 3) {
+        this.sendVolumeToVoice(id, volume);
+      } else {
+        let hexToSend = 0xff;
+        hexToSend = '0x' + (0xf0 + (15 - volume)).toString(16);
+        let bufferMessage = Buffer.from([hexToSend], 'hex');
+        this.port.write(bufferMessage, (err) => {
+          if (err) {
+            return console.log('Error on write: ', err.message);
+          }
+          console.log('message written');
+        });
+      }
       // Send the volume to voice ID = id
       res.status(200).send({
         message: 'OK, hit volume, not doing anything right now though'
       });
     });
     router.post('/noise', async (req, res) => {
-      const noiseOn = req.fields.on;
+      let hexToSend, bufferMessage;
+      const noiseVol = req.fields.volume;
       const noiseType = req.fields.noiseType;
       const noiseShift = req.fields.noiseShift;
-      console.log(noiseOn, noiseType, noiseShift);
-      let bufferMessage;
-      if (noiseOn) {
-        bufferMessage = Buffer.from(['0xf0'], 'hex');
-      } else {
-        bufferMessage = Buffer.from(['0xff'], 'hex');
-      }
+      console.log(noiseVol, noiseType, noiseShift);
+      hexToSend = 0xff;
+      hexToSend = '0x' + (0xf0 + (15 - noiseVol)).toString(16);
+      bufferMessage = Buffer.from([hexToSend], 'hex');
       console.log('about to write first part of it!!!', bufferMessage);
       this.port.write(bufferMessage, (err) => {
         if (err) {
@@ -84,7 +94,7 @@ class SerialComms {
         console.log('message written');
       });
       await wait(200);
-      let hexToSend = noiseType === 'white' ? 0xe4 : 0xe0;
+      hexToSend = noiseType === 'white' ? 0xe4 : 0xe0;
       hexToSend =
         '0x' +
         (
