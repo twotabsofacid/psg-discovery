@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 const maxBpm = 1080;
 
-export default function Noise({ globalToggle }) {
+export default function Noise({ id, globalToggle, download, data }) {
   const noiseVol = useRef(0);
   const noiseType = useRef('white');
   const noiseShift = useRef('low');
@@ -143,6 +143,35 @@ export default function Noise({ globalToggle }) {
       }, (60 / bpmRef.current) * 1000);
     }
   }, [globalToggle]);
+  /**
+   * DOWNLOAD
+   * Store stuff in storage on back end
+   */
+  useEffect(() => {
+    axios({
+      method: 'post',
+      url: 'http://localhost:1337/data/store',
+      data: {
+        id: id,
+        sequence: checkboxesRef.current
+      }
+    })
+      .then((res) => {
+        // console.log(res);
+      })
+      .catch((err) => {
+        console.log('error', err);
+      });
+  }, [download]);
+  /* DATA
+   * Load in data
+   */
+  useEffect(() => {
+    if (data) {
+      checkboxesRef.current = data;
+      setCheckboxes([...checkboxesRef.current]);
+    }
+  }, [data]);
   /**
    * SEQUENCER TICKS
    */

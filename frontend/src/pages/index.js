@@ -18,6 +18,7 @@ export default function Home() {
   const [dataVoiceOne, setDataVoiceOne] = useState(null);
   const [dataVoiceTwo, setDataVoiceTwo] = useState(null);
   const [dataVoiceThree, setDataVoiceThree] = useState(null);
+  const [dataNoise, setDataNoise] = useState(null);
   const downloadRef = useRef(null);
   const dlAnchorRef = useRef(null);
   const onReaderLoad = (e) => {
@@ -26,6 +27,7 @@ export default function Home() {
       setDataVoiceOne(obj[0]);
       setDataVoiceTwo(obj[1]);
       setDataVoiceThree(obj[2]);
+      setDataNoise(obj[3]);
     }
   };
   return (
@@ -107,7 +109,12 @@ export default function Home() {
           download={download}
           data={dataVoiceThree}
         />
-        <Noise globalToggle={globalToggle} />
+        <Noise
+          id={3}
+          globalToggle={globalToggle}
+          download={download}
+          data={dataNoise}
+        />
       </section>
       <a href="" ref={dlAnchorRef} className="hidden">
         DL
