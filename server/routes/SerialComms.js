@@ -63,7 +63,7 @@ class SerialComms {
         this.sendVolumeToVoice(id, volume);
       } else {
         let hexToSend = 0xff;
-        hexToSend = '0x' + (0xf0 + (15 - volume)).toString(16);
+        hexToSend = '0x' + (0xf0 + volume).toString(16);
         let bufferMessage = Buffer.from([hexToSend], 'hex');
         this.port.write(bufferMessage, (err) => {
           if (err) {
@@ -93,7 +93,7 @@ class SerialComms {
         }
         console.log('message written');
       });
-      await wait(200);
+      await wait(50);
       hexToSend = noiseType === 'white' ? 0xe4 : 0xe0;
       hexToSend =
         '0x' +

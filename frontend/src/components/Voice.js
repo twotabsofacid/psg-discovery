@@ -25,7 +25,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
       setTimeout(() => {
         setVolume(15)
           .then((data) => {
-            console.log(data);
+            // console.log(data);
           })
           .catch((err) => {
             console.log(err);
@@ -57,7 +57,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
         }
       })
         .then((res) => {
-          console.log('got response', res.data);
+          // console.log('got response', res.data);
           resolve(res.data);
         })
         .catch((err) => {
@@ -76,7 +76,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
       setTimeout(() => {
         setVolume(15)
           .then((data) => {
-            console.log(data);
+            // console.log(data);
           })
           .catch((err) => {
             console.log(err);
@@ -100,9 +100,19 @@ export default function Sequencer({ id, globalToggle, download, data }) {
     if (volToPlay) {
       // TODO SEND AXIOS POST REQUEST TO BACK END,
       // PLAY VOICE `ID` FREQ AT VOL
-      setVolume(volToPlay.row)
+      let volToPlayMapped =
+        volToPlay.row === 0
+          ? 0
+          : volToPlay.row === 1
+          ? 2
+          : volToPlay.row === 2
+          ? 4
+          : volToPlay.row === 3
+          ? 10
+          : 15;
+      setVolume(volToPlayMapped)
         .then((data) => {
-          console.log(data);
+          // console.log(data);
         })
         .catch((err) => {
           console.log(err);
@@ -114,7 +124,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
    */
   useEffect(() => {
     bpmRef.current = bpm;
-    console.log('changed the bpm i guess', bpm);
+    // console.log('changed the bpm i guess', bpm);
     if (transportRef.current) {
       clearInterval(transportRef.current);
       transportRef.current = null;
@@ -139,10 +149,10 @@ export default function Sequencer({ id, globalToggle, download, data }) {
       }
     })
       .then((res) => {
-        console.log('got response', res.data);
+        // console.log('got response', res.data);
         setVolume(15)
           .then((data) => {
-            console.log(data);
+            // console.log(data);
           })
           .catch((err) => {
             console.log(err);
@@ -152,9 +162,6 @@ export default function Sequencer({ id, globalToggle, download, data }) {
         console.log('got error', err);
       });
   }, [frequency]);
-  const updateBoxes = () => {
-    console.log('we should update boxes idk');
-  };
   /**
    * DOWNLOAD
    * Store stuff in storage on back end
@@ -169,7 +176,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
       }
     })
       .then((res) => {
-        console.log(res);
+        // console.log(res);
       })
       .catch((err) => {
         console.log('error', err);
@@ -192,12 +199,47 @@ export default function Sequencer({ id, globalToggle, download, data }) {
     let checks = [];
     for (let i = 0; i < 16; i++) {
       checks[i] = [];
-      for (let j = 0; j < 16; j++) {
+      for (let j = 0; j < 5; j++) {
         checks[i][j] = { value: `${i},${j}`, row: j, column: i, on: false };
       }
     }
     checkboxesRef.current = checks;
     setCheckboxes(checkboxesRef.current);
+    const onMIDIMessage = (evt) => {
+      console.log(evt.data);
+      if (evt.data[0] === 144) {
+        console.log('NOTE ON', evt.data[1]);
+        // Need to do something here with the note
+        // to convert it to frequency (or whatever it is
+        // that you're sending to the serial comms)
+      }
+    };
+    if (id === 0) {
+      let midi = null; // global MIDIAccess object
+      const onMIDISuccess = (midiAccess) => {
+        console.log('MIDI ready!');
+        for (const entry of midiAccess.inputs) {
+          const input = entry[1];
+          console.log(
+            `Input port [type:'${input.type}']` +
+              ` id:'${input.id}'` +
+              ` manufacturer:'${input.manufacturer}'` +
+              ` name:'${input.name}'` +
+              ` version:'${input.version}'`
+          );
+        }
+        midiAccess.inputs.forEach((entry) => {
+          entry.onmidimessage = onMIDIMessage;
+        });
+        midi = midiAccess; // store in the global (in real usage, would probably keep in an object instance)
+      };
+
+      const onMIDIFailure = (msg) => {
+        console.error(`Failed to get MIDI access - ${msg}`);
+      };
+
+      navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+    }
   }, []);
   return (
     <main className="h-auto flex flex-col m-3 p-3 border border-black">
@@ -217,6 +259,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
           <input
             type="range"
             name="bpm"
+            id="bpm"
             min="1"
             className="w-full"
             max={maxBpm}
@@ -230,6 +273,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
           <input
             type="range"
             name="frequency"
+            id="frequency"
             min={minFreq}
             max={maxFreq}
             className="w-full"
@@ -242,12 +286,12 @@ export default function Sequencer({ id, globalToggle, download, data }) {
             Frequency: {frequency}
           </label>
         </div>
-        <div className="w-[80%] flex mx-auto">
+        <div className="w-[80%] flex mx-auto justify-between">
           {checkboxes.map((boxRow, index) => {
             return (
               <div
                 key={index}
-                className={`flex flex-col tick-col ${
+                className={`flex flex-col justify-between tick-col ${
                   activeTick === index ? 'bg-blue-300' : ''
                 }`}
               >
@@ -257,7 +301,6 @@ export default function Sequencer({ id, globalToggle, download, data }) {
                       <input
                         key={box.value}
                         type="checkbox"
-                        id={`box-${box.value}`}
                         value={box.value}
                         checked={box.on}
                         className={`tick ${

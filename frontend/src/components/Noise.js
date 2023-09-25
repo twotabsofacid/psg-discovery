@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-const maxBpm = 360;
+const maxBpm = 1080;
 
 export default function Noise({ globalToggle }) {
   const noiseVol = useRef(0);
@@ -26,7 +26,7 @@ export default function Noise({ globalToggle }) {
       }
     })
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
       })
       .catch((err) => {
         console.log('got error', err);
@@ -44,7 +44,7 @@ export default function Noise({ globalToggle }) {
       }
     })
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
       })
       .catch((err) => {
         console.log('got error', err);
@@ -62,7 +62,7 @@ export default function Noise({ globalToggle }) {
       }
     })
       .then((res) => {
-        console.log(res.data);
+        // console.log(res.data);
       })
       .catch((err) => {
         console.log('got error', err);
@@ -78,7 +78,7 @@ export default function Noise({ globalToggle }) {
       setTimeout(() => {
         setVolume(15)
           .then((data) => {
-            console.log(data);
+            // console.log(data);
           })
           .catch((err) => {
             console.log(err);
@@ -110,7 +110,7 @@ export default function Noise({ globalToggle }) {
         }
       })
         .then((res) => {
-          console.log(res.data);
+          // console.log(res.data);
           resolve(res.data);
         })
         .catch((err) => {
@@ -129,7 +129,7 @@ export default function Noise({ globalToggle }) {
       setTimeout(() => {
         setVolume(15)
           .then((data) => {
-            console.log(data);
+            // console.log(data);
           })
           .catch((err) => {
             console.log(err);
@@ -153,9 +153,19 @@ export default function Noise({ globalToggle }) {
     if (volToPlay) {
       // TODO SEND AXIOS POST REQUEST TO BACK END,
       // PLAY VOICE `ID` FREQ AT VOL
-      setVolume(volToPlay.row)
+      let volToPlayMapped =
+        volToPlay.row === 0
+          ? 0
+          : volToPlay.row === 1
+          ? 2
+          : volToPlay.row === 2
+          ? 4
+          : volToPlay.row === 3
+          ? 10
+          : 15;
+      setVolume(volToPlayMapped)
         .then((data) => {
-          console.log(data);
+          // console.log(data);
         })
         .catch((err) => {
           console.log(err);
@@ -167,7 +177,6 @@ export default function Noise({ globalToggle }) {
    */
   useEffect(() => {
     bpmRef.current = bpm;
-    console.log('changed the bpm i guess', bpm);
     if (transportRef.current) {
       clearInterval(transportRef.current);
       transportRef.current = null;
@@ -184,7 +193,7 @@ export default function Noise({ globalToggle }) {
     let checks = [];
     for (let i = 0; i < 16; i++) {
       checks[i] = [];
-      for (let j = 0; j < 16; j++) {
+      for (let j = 0; j < 5; j++) {
         checks[i][j] = { value: `${i},${j}`, row: j, column: i, on: false };
       }
     }
@@ -196,7 +205,7 @@ export default function Noise({ globalToggle }) {
       <div className="w-full flex justify-items-between pb-1 mb-6 border-b border-black">
         <h1 className="text-xl font-bold">noise</h1>
       </div>
-      <div className="w-full flex justify-items-center items-center grow">
+      <div className="w-full flex justify-items-center items-center grow mb-6">
         <div className="flex grow justify-items-center items-center">
           <input
             type="checkbox"
@@ -295,12 +304,12 @@ export default function Noise({ globalToggle }) {
             BPM: {bpm}
           </label>
         </div>
-        <div className="w-[80%] flex mx-auto">
+        <div className="w-[80%] flex mx-auto justify-between">
           {checkboxes.map((boxRow, index) => {
             return (
               <div
                 key={index}
-                className={`flex flex-col tick-col ${
+                className={`flex flex-col justify-between tick-col ${
                   activeTick === index ? 'bg-blue-300' : ''
                 }`}
               >
@@ -310,7 +319,6 @@ export default function Noise({ globalToggle }) {
                       <input
                         key={box.value}
                         type="checkbox"
-                        id={`box-${box.value}`}
                         value={box.value}
                         checked={box.on}
                         className={`tick ${
