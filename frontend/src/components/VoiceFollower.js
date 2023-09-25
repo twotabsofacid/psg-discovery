@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 const maxBpm = 360;
-const minFreq = 0;
-const maxFreq = 1023;
+const minOffset = -50;
+const maxOffset = 50;
 
-export default function Voice({ id, globalToggle, download, data }) {
+export default function VoiceFollower({ id, globalToggle, download, data }) {
   const [checkboxes, setCheckboxes] = useState([]);
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
   const [bpm, setBpm] = useState(maxBpm / 2);
-  const [frequency, setFrequency] = useState((maxFreq + minFreq) / 2);
+  const [offset, setOffset] = useState(0);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
-  const frequencyRef = useRef((maxFreq + minFreq) / 2);
+  const offsetRef = useRef(0);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
   const toggleTransport = () => {
@@ -53,7 +53,7 @@ export default function Voice({ id, globalToggle, download, data }) {
         data: {
           volume: level,
           id: id,
-          frequency: frequencyRef.current
+          offset: offsetRef.current
         }
       })
         .then((res) => {
@@ -135,16 +135,16 @@ export default function Voice({ id, globalToggle, download, data }) {
     }
   }, [bpm]);
   /**
-   * FREQUENCY changes
+   * offset changes
    */
   useEffect(() => {
-    frequencyRef.current = frequency;
-    // Send updated frequency to server
+    offsetRef.current = offset;
+    // Send updated offset to server
     axios({
       method: 'post',
       url: 'http://localhost:1337/serial/frequency',
       data: {
-        frequency: frequencyRef.current,
+        offset: offsetRef.current,
         id: id
       }
     })
@@ -161,7 +161,7 @@ export default function Voice({ id, globalToggle, download, data }) {
       .catch((err) => {
         console.log('got error', err);
       });
-  }, [frequency]);
+  }, [offset]);
   /**
    * DOWNLOAD
    * Store stuff in storage on back end
@@ -205,37 +205,6 @@ export default function Voice({ id, globalToggle, download, data }) {
     }
     checkboxesRef.current = checks;
     setCheckboxes(checkboxesRef.current);
-    const onMIDIMessage = (evt) => {
-      console.log(evt.data);
-      if (evt.data[0] === 144) {
-        console.log('NOTE ON', evt.data[1]);
-        // Need to do something here with the note
-        // to convert it to frequency (or whatever it is
-        // that you're sending to the serial comms)
-      }
-    };
-    const onMIDISuccess = (midiAccess) => {
-      console.log('MIDI ready!');
-      for (const entry of midiAccess.inputs) {
-        const input = entry[1];
-        console.log(
-          `Input port [type:'${input.type}']` +
-            ` id:'${input.id}'` +
-            ` manufacturer:'${input.manufacturer}'` +
-            ` name:'${input.name}'` +
-            ` version:'${input.version}'`
-        );
-      }
-      midiAccess.inputs.forEach((entry) => {
-        entry.onmidimessage = onMIDIMessage;
-      });
-    };
-
-    const onMIDIFailure = (msg) => {
-      console.error(`Failed to get MIDI access - ${msg}`);
-    };
-
-    navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
   }, []);
   return (
     <main className="h-auto flex flex-col m-3 p-3 border border-black">
@@ -268,18 +237,18 @@ export default function Voice({ id, globalToggle, download, data }) {
           </label>
           <input
             type="range"
-            name="frequency"
-            id="frequency"
-            min={minFreq}
-            max={maxFreq}
+            name="offset"
+            id="offset"
+            min={minOffset}
+            max={maxOffset}
             className="w-full"
             onChange={(e) => {
               console.log('we should change...');
-              setFrequency(parseInt(e.target.value));
+              setOffset(parseInt(e.target.value));
             }}
           />
-          <label htmlFor="frequency" className="mb-3">
-            Frequency: {frequency}
+          <label htmlFor="offset" className="mb-3">
+            Offset: {offset}
           </label>
         </div>
         <div className="w-[80%] flex mx-auto justify-between">

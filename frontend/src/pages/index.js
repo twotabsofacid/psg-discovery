@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
 import Voice from '@/components/Voice';
+import VoiceFollower from '@/components/VoiceFollower';
 import Noise from '@/components/Noise';
 
 const wait = (timeout) => {
@@ -94,13 +95,13 @@ export default function Home() {
           download={download}
           data={dataVoiceOne}
         />
-        <Voice
+        <VoiceFollower
           id={1}
           globalToggle={globalToggle}
           download={download}
           data={dataVoiceTwo}
         />
-        <Voice
+        <VoiceFollower
           id={2}
           globalToggle={globalToggle}
           download={download}
