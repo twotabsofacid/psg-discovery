@@ -13,6 +13,11 @@ class SerialComms {
       baudRate: 9600,
       autoOpen: false
     });
+    this.voiceInfo = [
+      { id: 0, frequency: 510 },
+      { id: 1, offset: 2 },
+      { id: 2, offset: 3 }
+    ];
     this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
     this.addMiddleWare();
     this.addSerialPortListeners();
@@ -46,8 +51,16 @@ class SerialComms {
       res.status(200).send({ message: 'OK, but nothing to see here' });
     });
     router.post('/frequency', (req, res) => {
-      const frequency = parseInt(req.fields.frequency);
       const id = parseInt(req.fields.id);
+      let frequency;
+      if (id === 0) {
+        frequency = parseInt(req.fields.frequency);
+        this.voiceInfo[0].frequency = frequency;
+      } else {
+        const offset = parseInt(req.fields.offset);
+        frequency = this.voiceInfo[0].frequency + offset;
+        this.voiceInfo[id].offset = offset;
+      }
       console.log(`Should set ID: ${id} to Frequency: ${frequency}`);
       this.sendFrequencyToVoice(id, frequency);
       res.status(200).send({

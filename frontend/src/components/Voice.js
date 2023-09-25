@@ -145,6 +145,7 @@ export default function Sequencer({ id, globalToggle, download, data }) {
       url: 'http://localhost:1337/serial/frequency',
       data: {
         frequency: frequencyRef.current,
+        offset: parseInt(Math.random() * 6 - 3),
         id: id
       }
     })
