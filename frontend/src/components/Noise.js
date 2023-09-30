@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 const maxBpm = 1080;
+const minStepOffset = 0;
+const maxStepOffset = 16;
 
-export default function Noise({ id, globalToggle, download, data }) {
+export default function Noise({ id, globalToggle, download, data, bpm }) {
   const noiseVol = useRef(0);
   const noiseType = useRef('white');
   const noiseShift = useRef('low');
+  const [stepOffset, setStepOffset] = useState(0);
   const [checkboxes, setCheckboxes] = useState([]);
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
-  const [bpm, setBpm] = useState(maxBpm / 2);
   const checkboxesRef = useRef([]);
+  const stepOffsetRef = useRef(0);
   const bpmRef = useRef(maxBpm / 2);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
@@ -190,7 +193,9 @@ export default function Noise({ id, globalToggle, download, data }) {
           : volToPlay.row === 2
           ? 4
           : volToPlay.row === 3
-          ? 10
+          ? 6
+          : volToPlay.row === 4
+          ? 8
           : 15;
       setVolume(volToPlayMapped)
         .then((data) => {
@@ -222,7 +227,7 @@ export default function Noise({ id, globalToggle, download, data }) {
     let checks = [];
     for (let i = 0; i < 16; i++) {
       checks[i] = [];
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < 6; j++) {
         checks[i][j] = { value: `${i},${j}`, row: j, column: i, on: false };
       }
     }
@@ -311,26 +316,31 @@ export default function Noise({ id, globalToggle, download, data }) {
       </div>
       <div className="flex w-full">
         <div className="w-[20%] px-3 flex flex-col justify-items-center items-center">
-          <button
+          {/* <button
             onClick={toggleTransport}
             className={`p-3 mb-3 ${
               transportActive ? 'bg-red-200' : 'bg-green-200'
             }`}
           >
             {transportActive ? 'Stop' : 'Start'}
-          </button>
+          </button> */}
+          <div htmlFor="bpm" className="mb-3">
+            BPM: {bpm}
+          </div>
           <input
             type="range"
-            name="bpm"
-            min="1"
+            name="stepOffset"
+            min={minStepOffset}
+            max={maxStepOffset}
+            value={stepOffset}
             className="w-full"
-            max={maxBpm}
             onChange={(e) => {
-              setBpm(parseInt(e.target.value));
+              console.log('we should change...');
+              setStepOffset(parseInt(e.target.value));
             }}
           />
-          <label htmlFor="bpm" className="mb-3">
-            BPM: {bpm}
+          <label htmlFor="stepOffset" className="mb-3">
+            Step Offset: {stepOffset}
           </label>
         </div>
         <div className="w-[80%] flex mx-auto justify-between">

@@ -4,6 +4,8 @@ import Voice from '@/components/Voice';
 import VoiceFollower from '@/components/VoiceFollower';
 import Noise from '@/components/Noise';
 
+const maxBpm = 1080;
+
 const wait = (timeout) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -19,6 +21,7 @@ export default function Home() {
   const [dataVoiceTwo, setDataVoiceTwo] = useState(null);
   const [dataVoiceThree, setDataVoiceThree] = useState(null);
   const [dataNoise, setDataNoise] = useState(null);
+  const [bpm, setBpm] = useState(maxBpm / 2);
   const downloadRef = useRef(null);
   const dlAnchorRef = useRef(null);
   const onReaderLoad = (e) => {
@@ -89,6 +92,19 @@ export default function Home() {
             }
           }}
         />
+        <input
+          type="range"
+          name="bpm"
+          min="1"
+          className="w-full"
+          max={maxBpm}
+          onChange={(e) => {
+            setBpm(parseInt(e.target.value));
+          }}
+        />
+        <label htmlFor="bpm" className="mb-3">
+          BPM: {bpm}
+        </label>
       </section>
       <section className="flex flex-col">
         <Voice
@@ -96,24 +112,28 @@ export default function Home() {
           globalToggle={globalToggle}
           download={download}
           data={dataVoiceOne}
+          bpm={bpm}
         />
         <VoiceFollower
           id={1}
           globalToggle={globalToggle}
           download={download}
           data={dataVoiceTwo}
+          bpm={bpm}
         />
         <VoiceFollower
           id={2}
           globalToggle={globalToggle}
           download={download}
           data={dataVoiceThree}
+          bpm={bpm}
         />
         <Noise
           id={3}
           globalToggle={globalToggle}
           download={download}
           data={dataNoise}
+          bpm={bpm}
         />
       </section>
       <a href="" ref={dlAnchorRef} className="hidden">

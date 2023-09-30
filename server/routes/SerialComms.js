@@ -4,7 +4,11 @@ const router = express.Router();
 const { SerialPort, SerialPortMock } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 const { wait } = require('../helpers/utils');
-const { numToHex } = require('../helpers/converters');
+const {
+  numToHex,
+  midiToFrequency,
+  frequencyToMidi
+} = require('../helpers/converters');
 
 class SerialComms {
   constructor() {
@@ -58,11 +62,13 @@ class SerialComms {
         this.voiceInfo[0].frequency = frequency;
       } else {
         const offset = parseInt(req.fields.offset);
-        frequency = this.voiceInfo[0].frequency + offset;
+        frequency = midiToFrequency(
+          frequencyToMidi(this.voiceInfo[0].frequency) + offset
+        );
         this.voiceInfo[id].offset = offset;
       }
       console.log(`Should set ID: ${id} to Frequency: ${frequency}`);
-      this.sendFrequencyToVoice(id, frequency);
+      // this.sendFrequencyToVoice(id, frequency);
       res.status(200).send({
         message: 'OK, hit frequency, not doing anything right now though'
       });
@@ -171,11 +177,27 @@ class SerialComms {
     let bufferMessage;
     let hexVol = volume.toString(16);
     if (voiceNum === 0) {
-      bufferMessage = Buffer.from(['0x9' + hexVol], 'hex');
+      // bufferMessage = Buffer.from(['0x9' + hexVol], 'hex');
+      bufferMessage = Buffer.from(
+        ['0x9' + hexVol].concat(numToHex(0, this.voiceInfo[0].frequency)),
+        'hex'
+      );
     } else if (voiceNum === 1) {
-      bufferMessage = Buffer.from(['0xb' + hexVol], 'hex');
+      // bufferMessage = Buffer.from(['0xb' + hexVol], 'hex');
+      bufferMessage = Buffer.from(
+        ['0xb' + hexVol].concat(
+          numToHex(1, this.voiceInfo[0].frequency + this.voiceInfo[1].offset)
+        ),
+        'hex'
+      );
     } else {
-      bufferMessage = Buffer.from(['0xd' + hexVol], 'hex');
+      // bufferMessage = Buffer.from(['0xd' + hexVol], 'hex');
+      bufferMessage = Buffer.from(
+        ['0xd' + hexVol].concat(
+          numToHex(2, this.voiceInfo[0].frequency + this.voiceInfo[2].offset)
+        ),
+        'hex'
+      );
     }
     console.log('about to write it!!!', bufferMessage);
     this.port.write(bufferMessage, (err) => {

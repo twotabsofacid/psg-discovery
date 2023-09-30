@@ -3,16 +3,25 @@ import axios from 'axios';
 const maxBpm = 360;
 const minOffset = -50;
 const maxOffset = 50;
+const minStepOffset = 0;
+const maxStepOffset = 16;
 
-export default function VoiceFollower({ id, globalToggle, download, data }) {
+export default function VoiceFollower({
+  id,
+  globalToggle,
+  download,
+  data,
+  bpm
+}) {
   const [checkboxes, setCheckboxes] = useState([]);
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
-  const [bpm, setBpm] = useState(maxBpm / 2);
   const [offset, setOffset] = useState(0);
+  const [stepOffset, setStepOffset] = useState(0);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
   const offsetRef = useRef(0);
+  const stepOffsetRef = useRef(0);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
   const toggleTransport = () => {
@@ -32,11 +41,14 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
           });
       }, 500);
     } else {
-      setTransportActive(true);
-      transportRef.current = setInterval(() => {
-        activeTickRef.current = (activeTickRef.current + 1) % 16;
-        setActiveTick(activeTickRef.current);
-      }, (60 / bpmRef.current) * 1000);
+      setTimeout(() => {
+        console.log('should have waited...', stepOffsetRef.current);
+        setTransportActive(true);
+        transportRef.current = setInterval(() => {
+          activeTickRef.current = (activeTickRef.current + 1) % 16;
+          setActiveTick(activeTickRef.current);
+        }, (60 / bpmRef.current) * 1000);
+      }, stepOffsetRef.current * (60 / bpmRef.current) * 1000);
     }
   };
   const toggleBox = (boxValue) => {
@@ -83,11 +95,13 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
           });
       }, 500);
     } else {
-      setTransportActive(true);
-      transportRef.current = setInterval(() => {
-        activeTickRef.current = (activeTickRef.current + 1) % 16;
-        setActiveTick(activeTickRef.current);
-      }, (60 / bpmRef.current) * 1000);
+      setTimeout(() => {
+        setTransportActive(true);
+        transportRef.current = setInterval(() => {
+          activeTickRef.current = (activeTickRef.current + 1) % 16;
+          setActiveTick(activeTickRef.current);
+        }, (60 / bpmRef.current) * 1000);
+      }, stepOffsetRef.current * (60 / bpmRef.current) * 1000);
     }
   }, [globalToggle]);
   /**
@@ -108,7 +122,9 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
           : volToPlay.row === 2
           ? 4
           : volToPlay.row === 3
-          ? 10
+          ? 6
+          : volToPlay.row === 4
+          ? 8
           : 15;
       setVolume(volToPlayMapped)
         .then((data) => {
@@ -163,6 +179,13 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
       });
   }, [offset]);
   /**
+   * offset changes
+   */
+  useEffect(() => {
+    console.log('set the offset...', stepOffset);
+    stepOffsetRef.current = stepOffset;
+  }, [stepOffset]);
+  /**
    * DOWNLOAD
    * Store stuff in storage on back end
    */
@@ -199,7 +222,7 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
     let checks = [];
     for (let i = 0; i < 16; i++) {
       checks[i] = [];
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < 6; j++) {
         checks[i][j] = { value: `${i},${j}`, row: j, column: i, on: false };
       }
     }
@@ -213,34 +236,23 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
       </div>
       <div className="flex w-full">
         <div className="w-[20%] px-3 flex flex-col justify-items-center items-center">
-          <button
+          {/* <button
             onClick={toggleTransport}
             className={`p-3 mb-3 ${
               transportActive ? 'bg-red-200' : 'bg-green-200'
             }`}
           >
             {transportActive ? 'Stop' : 'Start'}
-          </button>
-          <input
-            type="range"
-            name="bpm"
-            id="bpm"
-            min="1"
-            className="w-full"
-            max={maxBpm}
-            onChange={(e) => {
-              setBpm(parseInt(e.target.value));
-            }}
-          />
-          <label htmlFor="bpm" className="mb-3">
+          </button> */}
+          <div htmlFor="bpm" className="mb-3">
             BPM: {bpm}
-          </label>
+          </div>
           <input
             type="range"
             name="offset"
-            id="offset"
             min={minOffset}
             max={maxOffset}
+            value={offset}
             className="w-full"
             onChange={(e) => {
               console.log('we should change...');
@@ -248,7 +260,23 @@ export default function VoiceFollower({ id, globalToggle, download, data }) {
             }}
           />
           <label htmlFor="offset" className="mb-3">
-            Offset: {offset}
+            Midi Offset: {offset}
+          </label>
+          <input
+            type="range"
+            name="stepOffset"
+            min={minStepOffset}
+            max={maxStepOffset}
+            value={stepOffset}
+            step="0.25"
+            className="w-full"
+            onChange={(e) => {
+              console.log('we should change...');
+              setStepOffset(parseFloat(e.target.value));
+            }}
+          />
+          <label htmlFor="stepOffset" className="mb-3">
+            Step Offset: {stepOffset}
           </label>
         </div>
         <div className="w-[80%] flex mx-auto justify-between">

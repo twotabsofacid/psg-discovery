@@ -3,13 +3,16 @@ import axios from 'axios';
 const maxBpm = 360;
 const minFreq = 0;
 const maxFreq = 1023;
+const minMidi = 21;
+const maxMidi = 127;
 
-export default function Voice({ id, globalToggle, download, data }) {
+export default function Voice({ id, globalToggle, download, data, bpm }) {
   const [checkboxes, setCheckboxes] = useState([]);
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
-  const [bpm, setBpm] = useState(maxBpm / 2);
   const [frequency, setFrequency] = useState((maxFreq + minFreq) / 2);
+  const [midi, setMidi] = useState(60);
+  const midiRef = useRef(60);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
   const frequencyRef = useRef((maxFreq + minFreq) / 2);
@@ -108,7 +111,9 @@ export default function Voice({ id, globalToggle, download, data }) {
           : volToPlay.row === 2
           ? 4
           : volToPlay.row === 3
-          ? 10
+          ? 6
+          : volToPlay.row === 4
+          ? 8
           : 15;
       setVolume(volToPlayMapped)
         .then((data) => {
@@ -163,6 +168,36 @@ export default function Voice({ id, globalToggle, download, data }) {
       });
   }, [frequency]);
   /**
+   * MIDI changes
+   */
+  useEffect(() => {
+    const numToSend = 2000000 / (32 * 440 * Math.pow(2, (midi - 69) / 12));
+    console.log('we should send num', numToSend);
+    frequencyRef.current = numToSend;
+    // Send updated frequency to server
+    axios({
+      method: 'post',
+      url: 'http://localhost:1337/serial/frequency',
+      data: {
+        frequency: numToSend,
+        id: id
+      }
+    })
+      .then((res) => {
+        // console.log('got response', res.data);
+        setVolume(15)
+          .then((data) => {
+            // console.log(data);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      })
+      .catch((err) => {
+        console.log('got error', err);
+      });
+  }, [midi]);
+  /**
    * DOWNLOAD
    * Store stuff in storage on back end
    */
@@ -193,13 +228,13 @@ export default function Voice({ id, globalToggle, download, data }) {
     }
   }, [data]);
   /**
-   * Create boxes
+   * Create boxes, set up midi stuff
    */
   useEffect(() => {
     let checks = [];
     for (let i = 0; i < 16; i++) {
       checks[i] = [];
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < 6; j++) {
         checks[i][j] = { value: `${i},${j}`, row: j, column: i, on: false };
       }
     }
@@ -209,6 +244,10 @@ export default function Voice({ id, globalToggle, download, data }) {
       console.log(evt.data);
       if (evt.data[0] === 144) {
         console.log('NOTE ON', evt.data[1]);
+        const numToSend =
+          2000000 / (32 * 440 * Math.pow(2, (evt.data[1] - 69) / 12));
+        setFrequency(numToSend);
+        setMidi(evt.data[1]);
         // Need to do something here with the note
         // to convert it to frequency (or whatever it is
         // that you're sending to the serial comms)
@@ -244,42 +283,32 @@ export default function Voice({ id, globalToggle, download, data }) {
       </div>
       <div className="flex w-full">
         <div className="w-[20%] px-3 flex flex-col justify-items-center items-center">
-          <button
+          {/* <button
             onClick={toggleTransport}
             className={`p-3 mb-3 ${
               transportActive ? 'bg-red-200' : 'bg-green-200'
             }`}
           >
             {transportActive ? 'Stop' : 'Start'}
-          </button>
-          <input
-            type="range"
-            name="bpm"
-            id="bpm"
-            min="1"
-            className="w-full"
-            max={maxBpm}
-            onChange={(e) => {
-              setBpm(parseInt(e.target.value));
-            }}
-          />
-          <label htmlFor="bpm" className="mb-3">
+          </button> */}
+          <div htmlFor="bpm" className="mb-3">
             BPM: {bpm}
-          </label>
+          </div>
           <input
             type="range"
-            name="frequency"
-            id="frequency"
-            min={minFreq}
-            max={maxFreq}
+            name="midi"
+            id="midi"
+            min={minMidi}
+            max={maxMidi}
+            value={midi}
             className="w-full"
             onChange={(e) => {
               console.log('we should change...');
-              setFrequency(parseInt(e.target.value));
+              setMidi(parseInt(e.target.value));
             }}
           />
-          <label htmlFor="frequency" className="mb-3">
-            Frequency: {frequency}
+          <label htmlFor="midi" className="mb-3">
+            Midi: {midi}
           </label>
         </div>
         <div className="w-[80%] flex mx-auto justify-between">

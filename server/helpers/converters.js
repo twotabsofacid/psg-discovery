@@ -2,6 +2,14 @@ const toBinary = (dec) => {
   return (dec >>> 0).toString(2);
 };
 
+const midiToFrequency = (midi) => {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+};
+
+const frequencyToMidi = (frequency) => {
+  return 12 * Math.log2(frequency / 440) + 69;
+};
+
 const frequencyToHex = (freq) => {
   // Frequency should go from 62 to 15625
   // this should get mapped to an int 4 1023
@@ -53,4 +61,10 @@ const numToHex = (voiceNum, numToSend) => {
   }
 };
 
-module.exports = { numToHex, frequencyToHex, toBinary };
+module.exports = {
+  numToHex,
+  frequencyToHex,
+  toBinary,
+  midiToFrequency,
+  frequencyToMidi
+};
