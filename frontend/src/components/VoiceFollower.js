@@ -17,10 +17,12 @@ export default function VoiceFollower({
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [finegrainOffset, setFinegrainOffset] = useState(0);
   const [stepOffset, setStepOffset] = useState(0);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
   const offsetRef = useRef(0);
+  const finegrainOffsetRef = useRef(0);
   const stepOffsetRef = useRef(0);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
@@ -155,12 +157,14 @@ export default function VoiceFollower({
    */
   useEffect(() => {
     offsetRef.current = offset;
+    console.log('offsets!!!', offsetRef.current, finegrainOffsetRef.current);
     // Send updated offset to server
     axios({
       method: 'post',
       url: 'http://localhost:1337/serial/frequency',
       data: {
-        offset: offsetRef.current,
+        midiNumOffset: offsetRef.current,
+        finegrainNumOffset: finegrainOffsetRef.current,
         id: id
       }
     })
@@ -178,6 +182,36 @@ export default function VoiceFollower({
         console.log('got error', err);
       });
   }, [offset]);
+  /**
+   * offset changes
+   */
+  useEffect(() => {
+    finegrainOffsetRef.current = finegrainOffset;
+    console.log('offsets!!!', offsetRef.current, finegrainOffsetRef.current);
+    // Send updated offset to server
+    axios({
+      method: 'post',
+      url: 'http://localhost:1337/serial/frequency',
+      data: {
+        midiNumOffset: offsetRef.current,
+        finegrainNumOffset: finegrainOffsetRef.current,
+        id: id
+      }
+    })
+      .then((res) => {
+        // console.log('got response', res.data);
+        setVolume(15)
+          .then((data) => {
+            // console.log(data);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      })
+      .catch((err) => {
+        console.log('got error', err);
+      });
+  }, [finegrainOffset]);
   /**
    * offset changes
    */
@@ -247,6 +281,22 @@ export default function VoiceFollower({
           <div htmlFor="bpm" className="mb-3">
             BPM: {bpm}
           </div>
+          <input
+            type="range"
+            name="offset"
+            min={-10}
+            max={10}
+            step="1"
+            value={finegrainOffset}
+            className="w-full"
+            onChange={(e) => {
+              console.log('we should change...');
+              setFinegrainOffset(parseInt(e.target.value));
+            }}
+          />
+          <label htmlFor="offset" className="mb-3">
+            Finegrain offset: {finegrainOffset}
+          </label>
           <input
             type="range"
             name="offset"

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 const maxBpm = 360;
-const minFreq = 0;
-const maxFreq = 1023;
+const minNum = 0;
+const maxNum = 1023;
 const minMidi = 21;
 const maxMidi = 127;
 
@@ -10,12 +10,11 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
   const [checkboxes, setCheckboxes] = useState([]);
   const [activeTick, setActiveTick] = useState(0);
   const [transportActive, setTransportActive] = useState(false);
-  const [frequency, setFrequency] = useState((maxFreq + minFreq) / 2);
+  const [numToSend, setNumToSend] = useState((minNum + maxNum) / 2);
   const [midi, setMidi] = useState(60);
-  const midiRef = useRef(60);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
-  const frequencyRef = useRef((maxFreq + minFreq) / 2);
+  const numToSendRef = useRef((minNum + maxNum) / 2);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
   const toggleTransport = () => {
@@ -56,7 +55,7 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
         data: {
           volume: level,
           id: id,
-          frequency: frequencyRef.current
+          numToSend: numToSendRef.current
         }
       })
         .then((res) => {
@@ -143,13 +142,13 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
    * FREQUENCY changes
    */
   useEffect(() => {
-    frequencyRef.current = frequency;
+    numToSendRef.current = numToSend;
     // Send updated frequency to server
     axios({
       method: 'post',
       url: 'http://localhost:1337/serial/frequency',
       data: {
-        frequency: frequencyRef.current,
+        numToSend: numToSendRef.current,
         id: id
       }
     })
@@ -166,36 +165,13 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
       .catch((err) => {
         console.log('got error', err);
       });
-  }, [frequency]);
+  }, [numToSend]);
   /**
    * MIDI changes
    */
   useEffect(() => {
-    const numToSend = 2000000 / (32 * 440 * Math.pow(2, (midi - 69) / 12));
-    console.log('we should send num', numToSend);
-    frequencyRef.current = numToSend;
-    // Send updated frequency to server
-    axios({
-      method: 'post',
-      url: 'http://localhost:1337/serial/frequency',
-      data: {
-        frequency: numToSend,
-        id: id
-      }
-    })
-      .then((res) => {
-        // console.log('got response', res.data);
-        setVolume(15)
-          .then((data) => {
-            // console.log(data);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      })
-      .catch((err) => {
-        console.log('got error', err);
-      });
+    const newNumToSend = 2000000 / (32 * 440 * Math.pow(2, (midi - 69) / 12));
+    setNumToSend(newNumToSend);
   }, [midi]);
   /**
    * DOWNLOAD
@@ -244,9 +220,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
       console.log(evt.data);
       if (evt.data[0] === 144) {
         console.log('NOTE ON', evt.data[1]);
-        const numToSend =
-          2000000 / (32 * 440 * Math.pow(2, (evt.data[1] - 69) / 12));
-        setFrequency(numToSend);
         setMidi(evt.data[1]);
         // Need to do something here with the note
         // to convert it to frequency (or whatever it is

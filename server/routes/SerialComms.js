@@ -4,11 +4,7 @@ const router = express.Router();
 const { SerialPort, SerialPortMock } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
 const { wait } = require('../helpers/utils');
-const {
-  numToHex,
-  midiToFrequency,
-  frequencyToMidi
-} = require('../helpers/converters');
+const { numToHex, midiToNum, numToMidi } = require('../helpers/converters');
 
 class SerialComms {
   constructor() {
@@ -18,9 +14,9 @@ class SerialComms {
       autoOpen: false
     });
     this.voiceInfo = [
-      { id: 0, frequency: 510 },
-      { id: 1, offset: 2 },
-      { id: 2, offset: 3 }
+      { id: 0, numToSend: 510 },
+      { id: 0, numToSend: 510, midiNumOffset: 0, finegrainNumOffset: 0 },
+      { id: 0, numToSend: 510, midiNumOffset: 0, finegrainNumOffset: 0 }
     ];
     this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
     this.addMiddleWare();
@@ -31,7 +27,7 @@ class SerialComms {
   }
   addMiddleWare() {
     router.use((req, res, next) => {
-      console.log('Serial Comms endpoint hit');
+      // console.log('Serial Comms endpoint hit');
       next();
     });
   }
@@ -47,7 +43,7 @@ class SerialComms {
       console.log('Established Mock Serialport connection');
     });
     this.parser.on('data', (data) => {
-      console.log('Parser Data:', data);
+      // console.log('Parser Data:', data);
     });
   }
   addRouteListeners() {
@@ -56,28 +52,60 @@ class SerialComms {
     });
     router.post('/frequency', (req, res) => {
       const id = parseInt(req.fields.id);
-      let frequency;
+      let numToSend;
       if (id === 0) {
-        frequency = parseInt(req.fields.frequency);
-        this.voiceInfo[0].frequency = frequency;
-      } else {
-        const offset = parseInt(req.fields.offset);
-        frequency = midiToFrequency(
-          frequencyToMidi(this.voiceInfo[0].frequency) + offset
+        numToSend = parseInt(req.fields.numToSend);
+        this.voiceInfo[0].numToSend = numToSend;
+        // Update the nums to send for voices 1 and 2...
+        const midiNumOffsetToSend1 = parseInt(
+          midiToNum(
+            numToMidi(this.voiceInfo[0].numToSend) +
+              this.voiceInfo[1].midiNumOffset
+          )
         );
-        this.voiceInfo[id].offset = offset;
+        this.voiceInfo[1].numToSend =
+          midiNumOffsetToSend1 + this.voiceInfo[1].finegrainNumOffset;
+        const midiNumOffsetToSend2 = parseInt(
+          midiToNum(
+            numToMidi(this.voiceInfo[0].numToSend) +
+              this.voiceInfo[2].midiNumOffset
+          )
+        );
+        this.voiceInfo[2].numToSend =
+          midiNumOffsetToSend2 + this.voiceInfo[2].finegrainNumOffset;
+      } else {
+        const midiNumOffset = Math.round(req.fields.midiNumOffset);
+        const finegrainNumOffset = Math.round(req.fields.finegrainNumOffset);
+        const midiNumOffsetToSend = Math.round(
+          midiToNum(numToMidi(this.voiceInfo[0].numToSend) + midiNumOffset)
+        );
+        numToSend = midiNumOffsetToSend + finegrainNumOffset;
+        console.log(
+          'literally everything...',
+          midiNumOffset,
+          finegrainNumOffset,
+          midiNumOffsetToSend,
+          numToSend,
+          this.voiceInfo[0].numToSend
+        );
+        this.voiceInfo[id].midiNumOffset = midiNumOffset;
+        this.voiceInfo[id].finegrainNumOffset = finegrainNumOffset;
+        this.voiceInfo[id].numToSend = numToSend;
       }
-      console.log(`Should set ID: ${id} to Frequency: ${frequency}`);
-      // this.sendFrequencyToVoice(id, frequency);
+      for (let i = 0; i < 3; i++) {
+        console.log(
+          `Should set ID: ${i} to Register Value: ${this.voiceInfo[i].numToSend}`
+        );
+      }
       res.status(200).send({
-        message: 'OK, hit frequency, not doing anything right now though'
+        message:
+          'OK, hit frequency, which should be called something else but here we are'
       });
     });
     router.post('/volume', (req, res) => {
-      console.log(req.fields);
       const volume = req.fields.volume;
       const id = req.fields.id;
-      console.log(`Should set ID: ${id} to Volume: ${volume}`);
+      // console.log(`Should set ID: ${id} to Volume: ${volume}`);
       if (id < 3) {
         this.sendVolumeToVoice(id, volume);
       } else {
@@ -88,7 +116,6 @@ class SerialComms {
           if (err) {
             return console.log('Error on write: ', err.message);
           }
-          console.log('message written');
         });
       }
       // Send the volume to voice ID = id
@@ -101,16 +128,13 @@ class SerialComms {
       const noiseVol = req.fields.volume;
       const noiseType = req.fields.noiseType;
       const noiseShift = req.fields.noiseShift;
-      console.log(noiseVol, noiseType, noiseShift);
       hexToSend = 0xff;
       hexToSend = '0x' + (0xf0 + (15 - noiseVol)).toString(16);
       bufferMessage = Buffer.from([hexToSend], 'hex');
-      console.log('about to write first part of it!!!', bufferMessage);
       this.port.write(bufferMessage, (err) => {
         if (err) {
           return console.log('Error on write: ', err.message);
         }
-        console.log('message written');
       });
       await wait(50);
       hexToSend = noiseType === 'white' ? 0xe4 : 0xe0;
@@ -126,14 +150,11 @@ class SerialComms {
             ? 1
             : 0)
         ).toString(16);
-      console.log('what is hex to send', hexToSend);
       bufferMessage = Buffer.from([hexToSend], 'hex');
-      console.log('about to write second part of it!!!', bufferMessage);
       this.port.write(bufferMessage, (err) => {
         if (err) {
           return console.log('Error on write: ', err.message);
         }
-        console.log('message written');
       });
       // Do a bunch of math here...
       res.status(200).send({
@@ -147,64 +168,32 @@ class SerialComms {
     console.log('opening port');
     this.port.open();
   }
-  sendFrequencyToVoice(voiceNum, frequency) {
-    let bufferMessage;
-    if (voiceNum === 0) {
-      bufferMessage = Buffer.from(
-        [0x90].concat(numToHex(voiceNum, frequency)),
-        'hex'
-      );
-    } else if (voiceNum === 1) {
-      bufferMessage = Buffer.from(
-        [0xb0].concat(numToHex(voiceNum, frequency)),
-        'hex'
-      );
-    } else {
-      bufferMessage = Buffer.from(
-        [0xd0].concat(numToHex(voiceNum, frequency)),
-        'hex'
-      );
-    }
-    console.log('about to write it!!!', bufferMessage);
-    this.port.write(bufferMessage, (err) => {
-      if (err) {
-        return console.log('Error on write: ', err.message);
-      }
-      console.log('message written');
-    });
-  }
   sendVolumeToVoice(voiceNum, volume) {
     let bufferMessage;
     let hexVol = volume.toString(16);
     if (voiceNum === 0) {
       // bufferMessage = Buffer.from(['0x9' + hexVol], 'hex');
       bufferMessage = Buffer.from(
-        ['0x9' + hexVol].concat(numToHex(0, this.voiceInfo[0].frequency)),
+        ['0x9' + hexVol].concat(numToHex(0, this.voiceInfo[0].numToSend)),
         'hex'
       );
     } else if (voiceNum === 1) {
       // bufferMessage = Buffer.from(['0xb' + hexVol], 'hex');
       bufferMessage = Buffer.from(
-        ['0xb' + hexVol].concat(
-          numToHex(1, this.voiceInfo[0].frequency + this.voiceInfo[1].offset)
-        ),
+        ['0xb' + hexVol].concat(numToHex(1, this.voiceInfo[1].numToSend)),
         'hex'
       );
     } else {
       // bufferMessage = Buffer.from(['0xd' + hexVol], 'hex');
       bufferMessage = Buffer.from(
-        ['0xd' + hexVol].concat(
-          numToHex(2, this.voiceInfo[0].frequency + this.voiceInfo[2].offset)
-        ),
+        ['0xd' + hexVol].concat(numToHex(2, this.voiceInfo[2].numToSend)),
         'hex'
       );
     }
-    console.log('about to write it!!!', bufferMessage);
     this.port.write(bufferMessage, (err) => {
       if (err) {
         return console.log('Error on write: ', err.message);
       }
-      console.log('message written');
     });
   }
 }
