@@ -115,7 +115,6 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
         finegrainLfoOffsetDirRef.current = -1;
       }
       finegrainLfoOffsetAmountRef.current += finegrainLfoOffsetDirRef.current;
-      console.log(finegrainLfoOffsetAmountRef.current);
       setFrequency(midiOffsetRef.current, finegrainLfoOffsetAmountRef.current)
         .then((res) => {})
         .catch((err) => {
@@ -141,7 +140,6 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
         finegrainLfoOffsetDirRef.current = Math.random() < 0.5 ? 1 : -1;
       }
       finegrainLfoOffsetAmountRef.current += finegrainLfoOffsetDirRef.current;
-      console.log(finegrainLfoOffsetAmountRef.current);
       setFrequency(midiOffsetRef.current, finegrainLfoOffsetAmountRef.current)
         .then((res) => {})
         .catch((err) => {
@@ -158,7 +156,6 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
         amplitudeOffsetDirRef.current *= -1;
       }
       amplitudeOffsetAmountRef.current += amplitudeOffsetDirRef.current;
-      console.log(amplitudeOffsetAmountRef.current);
     } else if (
       amplitudeNoiseyLfoRef.current &&
       amplitudeOffsetRef.current !== 0
@@ -173,21 +170,8 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
         amplitudeOffsetDirRef.current *= Math.random() > 0.5 ? -1 : 1;
       }
       amplitudeOffsetAmountRef.current += amplitudeOffsetDirRef.current;
-      console.log(amplitudeOffsetAmountRef.current);
     } else {
       amplitudeOffsetAmountRef.current = 0;
-    }
-    if (amplitudeLfoRef.current) {
-      console.log(
-        'amp stuff',
-        amplitudeRef.current,
-        amplitudeOffsetAmountRef.current,
-        Math.max(
-          Math.min(15, amplitudeRef.current + amplitudeOffsetAmountRef.current),
-          0
-        ),
-        id
-      );
     }
     setVolume(
       Math.max(
@@ -220,7 +204,7 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
   }, [bpm]);
   useEffect(() => {
     bpmRef.current = localBpm;
-    // console.log('changed the bpm i guess', bpm);
+    console.log('changed the bpm i guess', localBpm);
     if (transportRef.current) {
       clearInterval(transportRef.current);
       transportRef.current = null;

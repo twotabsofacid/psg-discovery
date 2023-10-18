@@ -9,7 +9,7 @@ const { numToHex, midiToNum, numToMidi } = require('../helpers/converters');
 class SerialComms {
   constructor() {
     this.port = new SerialPort({
-      path: '/dev/tty.usbserial-FTALFJHL',
+      path: '/dev/tty.usbserial-110',
       baudRate: 9600,
       autoOpen: false
     });
@@ -73,7 +73,7 @@ class SerialComms {
         numToSend = parseInt(req.fields.numToSend);
         this.voiceInfo[0].numToSend = numToSend;
         // Update the nums to send for voices 1 and 2...
-        const midiNumOffsetToSend1 = parseInt(
+        const midiNumOffsetToSend1 = Math.round(
           midiToNum(
             numToMidi(this.voiceInfo[0].numToSend) +
               this.voiceInfo[1].midiNumOffset
@@ -81,7 +81,7 @@ class SerialComms {
         );
         this.voiceInfo[1].numToSend =
           midiNumOffsetToSend1 + this.voiceInfo[1].finegrainNumOffset;
-        const midiNumOffsetToSend2 = parseInt(
+        const midiNumOffsetToSend2 = Math.round(
           midiToNum(
             numToMidi(this.voiceInfo[0].numToSend) +
               this.voiceInfo[2].midiNumOffset
