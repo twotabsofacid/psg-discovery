@@ -5,48 +5,20 @@ const minNum = 0;
 const maxNum = 1023;
 const minMidi = 21;
 const maxMidi = 127;
+const minAmplitude = -8;
+const maxAmplitude = 7;
 
-export default function Voice({ id, globalToggle, download, data, bpm }) {
-  const [checkboxes, setCheckboxes] = useState([]);
+export default function Voice({ id, globalToggle, bpm }) {
   const [activeTick, setActiveTick] = useState(0);
-  const [transportActive, setTransportActive] = useState(false);
   const [numToSend, setNumToSend] = useState((minNum + maxNum) / 2);
   const [midi, setMidi] = useState(60);
+  const [amplitude, setAmplitude] = useState(0);
+  const amplitudeRef = useRef(7);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
   const numToSendRef = useRef((minNum + maxNum) / 2);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
-  const toggleTransport = () => {
-    if (transportRef.current) {
-      setTransportActive(false);
-      clearInterval(transportRef.current);
-      setActiveTick(0);
-      activeTickRef.current = 0;
-      transportRef.current = null;
-      setTimeout(() => {
-        setVolume(15)
-          .then((data) => {
-            // console.log(data);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      }, 500);
-    } else {
-      setTransportActive(true);
-      transportRef.current = setInterval(() => {
-        activeTickRef.current = (activeTickRef.current + 1) % 16;
-        setActiveTick(activeTickRef.current);
-      }, (60 / bpmRef.current) * 1000);
-    }
-  };
-  const toggleBox = (boxValue) => {
-    let x = parseInt(boxValue.split(',')[0]);
-    let y = parseInt(boxValue.split(',')[1]);
-    checkboxesRef.current[x][y].on = !checkboxesRef.current[x][y].on;
-    setCheckboxes([...checkboxesRef.current]);
-  };
   const setVolume = async (level) => {
     return new Promise((resolve, reject) => {
       axios({
@@ -70,7 +42,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
   };
   useEffect(() => {
     if (!globalToggle) {
-      setTransportActive(false);
       clearInterval(transportRef.current);
       setActiveTick(0);
       activeTickRef.current = 0;
@@ -85,7 +56,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
           });
       }, 500);
     } else {
-      setTransportActive(true);
       transportRef.current = setInterval(() => {
         activeTickRef.current = (activeTickRef.current + 1) % 16;
         setActiveTick(activeTickRef.current);
@@ -96,33 +66,20 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
    * SEQUENCER TICKS
    */
   useEffect(() => {
-    const volToPlay = checkboxesRef.current[activeTick]?.find((box) => {
-      return box.on;
-    });
-    if (volToPlay) {
-      // TODO SEND AXIOS POST REQUEST TO BACK END,
-      // PLAY VOICE `ID` FREQ AT VOL
-      let volToPlayMapped =
-        volToPlay.row === 0
-          ? 0
-          : volToPlay.row === 1
-          ? 2
-          : volToPlay.row === 2
-          ? 4
-          : volToPlay.row === 3
-          ? 6
-          : volToPlay.row === 4
-          ? 8
-          : 15;
-      setVolume(volToPlayMapped)
-        .then((data) => {
-          // console.log(data);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    }
+    setVolume(amplitudeRef.current)
+      .then((data) => {
+        // console.log(data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }, [activeTick]);
+  /**
+   * Amplitude changes
+   */
+  useEffect(() => {
+    amplitudeRef.current = 7 - amplitude;
+  }, [amplitude]);
   /**
    * BPM changes
    */
@@ -154,13 +111,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
     })
       .then((res) => {
         // console.log('got response', res.data);
-        setVolume(15)
-          .then((data) => {
-            // console.log(data);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
       })
       .catch((err) => {
         console.log('got error', err);
@@ -174,48 +124,9 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
     setNumToSend(newNumToSend);
   }, [midi]);
   /**
-   * DOWNLOAD
-   * Store stuff in storage on back end
+   * Set up midi stuff
    */
   useEffect(() => {
-    axios({
-      method: 'post',
-      url: 'http://localhost:1337/data/store',
-      data: {
-        id: id,
-        sequence: checkboxesRef.current
-      }
-    })
-      .then((res) => {
-        // console.log(res);
-      })
-      .catch((err) => {
-        console.log('error', err);
-      });
-  }, [download]);
-  /**
-   * DATA
-   * Load in data
-   */
-  useEffect(() => {
-    if (data) {
-      checkboxesRef.current = data;
-      setCheckboxes([...checkboxesRef.current]);
-    }
-  }, [data]);
-  /**
-   * Create boxes, set up midi stuff
-   */
-  useEffect(() => {
-    let checks = [];
-    for (let i = 0; i < 16; i++) {
-      checks[i] = [];
-      for (let j = 0; j < 6; j++) {
-        checks[i][j] = { value: `${i},${j}`, row: j, column: i, on: false };
-      }
-    }
-    checkboxesRef.current = checks;
-    setCheckboxes(checkboxesRef.current);
     const onMIDIMessage = (evt) => {
       console.log(evt.data);
       if (evt.data[0] === 144) {
@@ -242,11 +153,9 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
         entry.onmidimessage = onMIDIMessage;
       });
     };
-
     const onMIDIFailure = (msg) => {
       console.error(`Failed to get MIDI access - ${msg}`);
     };
-
     navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
   }, []);
   return (
@@ -255,18 +164,12 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
         <h1 className="text-xl font-bold">voice {id}</h1>
       </div>
       <div className="flex w-full">
-        <div className="w-[20%] px-3 flex flex-col justify-items-center items-center">
-          {/* <button
-            onClick={toggleTransport}
-            className={`p-3 mb-3 ${
-              transportActive ? 'bg-red-200' : 'bg-green-200'
-            }`}
-          >
-            {transportActive ? 'Stop' : 'Start'}
-          </button> */}
+        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
           <div htmlFor="bpm" className="mb-3">
             BPM: {bpm}
           </div>
+        </div>
+        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
           <input
             type="range"
             name="midi"
@@ -284,36 +187,23 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
             Midi: {midi}
           </label>
         </div>
-        <div className="w-[80%] flex mx-auto justify-between">
-          {checkboxes.map((boxRow, index) => {
-            return (
-              <div
-                key={index}
-                className={`flex flex-col justify-between tick-col ${
-                  activeTick === index ? 'bg-blue-300' : ''
-                }`}
-              >
-                <>
-                  {boxRow.map((box) => {
-                    return (
-                      <input
-                        key={box.value}
-                        type="checkbox"
-                        value={box.value}
-                        checked={box.on}
-                        className={`tick ${
-                          activeTick === index ? 'bg-blue-100' : 'bg-white'
-                        }`}
-                        onChange={(e) => {
-                          toggleBox(box.value);
-                        }}
-                      ></input>
-                    );
-                  })}
-                </>
-              </div>
-            );
-          })}
+        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
+          <input
+            type="range"
+            name="amplitude"
+            min={minAmplitude}
+            max={maxAmplitude}
+            value={amplitude}
+            step="1"
+            className="w-full"
+            onChange={(e) => {
+              console.log('we should change...');
+              setAmplitude(parseInt(e.target.value));
+            }}
+          />
+          <label htmlFor="amplitude" className="mb-3">
+            Amplitude: {amplitude}
+          </label>
         </div>
       </div>
     </main>

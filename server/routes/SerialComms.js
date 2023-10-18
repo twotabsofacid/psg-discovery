@@ -15,8 +15,24 @@ class SerialComms {
     });
     this.voiceInfo = [
       { id: 0, numToSend: 510 },
-      { id: 0, numToSend: 510, midiNumOffset: 0, finegrainNumOffset: 0 },
-      { id: 0, numToSend: 510, midiNumOffset: 0, finegrainNumOffset: 0 }
+      {
+        id: 0,
+        numToSend: 510,
+        midiNumOffset: 0,
+        finegrainNumOffset: 0,
+        lfo: false,
+        noiseyLfo: false,
+        currentLfoOffset: 0
+      },
+      {
+        id: 0,
+        numToSend: 510,
+        midiNumOffset: 0,
+        finegrainNumOffset: 0,
+        lfo: false,
+        noiseyLfo: false,
+        currentLfoOffset: 0
+      }
     ];
     this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
     this.addMiddleWare();
@@ -178,13 +194,11 @@ class SerialComms {
         'hex'
       );
     } else if (voiceNum === 1) {
-      // bufferMessage = Buffer.from(['0xb' + hexVol], 'hex');
       bufferMessage = Buffer.from(
         ['0xb' + hexVol].concat(numToHex(1, this.voiceInfo[1].numToSend)),
         'hex'
       );
     } else {
-      // bufferMessage = Buffer.from(['0xd' + hexVol], 'hex');
       bufferMessage = Buffer.from(
         ['0xd' + hexVol].concat(numToHex(2, this.voiceInfo[2].numToSend)),
         'hex'
