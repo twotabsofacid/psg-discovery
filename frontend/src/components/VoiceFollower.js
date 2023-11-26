@@ -14,36 +14,44 @@ const maxAmplitude = 7;
 // 2) send those changes to /frequency endpoint and see if that works,
 //    and isnt too many changes all happening at once
 
-export default function VoiceFollower({ id, globalToggle, bpm }) {
+export default function VoiceFollower({
+  selected,
+  controlSelected,
+  typeToggle,
+  firstKnobDown,
+  firstKnobUp,
+  secondKnobDown,
+  secondKnobUp,
+  id,
+  globalToggle,
+  bpm
+}) {
   const [activeTick, setActiveTick] = useState(0);
-  const [midiOffset, setMidiOffset] = useState(0);
   const [finegrainOffset, setFinegrainOffset] = useState(0);
   const [finegrainLfoOffset, setFinegrainLfoOffset] = useState(0);
   const [amplitude, setAmplitude] = useState(0);
   const [amplitudeOffset, setAmplitudeOffset] = useState(0);
-  const [localBpm, setLocalBpm] = useState(0);
-  const finegrainLfoRef = useRef(false);
-  const finegrainNoiseyLfoRef = useRef(false);
-  const amplitudeLfoRef = useRef(false);
-  const amplitudeNoiseyLfoRef = useRef(false);
+  const [offsetType, setOffsetType] = useState('normal');
+  const [amplitudeType, setAmplitudeType] = useState('normal');
+  const offsetTypeRef = useRef('normal');
+  const amplitudeTypeRef = useRef('normal');
   const amplitudeRef = useRef(7);
   const amplitudeOffsetRef = useRef(0);
   const amplitudeOffsetAmountRef = useRef(0);
   const amplitudeOffsetDirRef = useRef(1);
   const bpmRef = useRef(maxBpm / 2);
-  const midiOffsetRef = useRef(0);
   const finegrainOffsetRef = useRef(0);
   const finegrainLfoOffsetRef = useRef(0);
   const finegrainLfoOffsetAmountRef = useRef(0);
   const finegrainLfoOffsetDirRef = useRef(1);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
-  const setFrequency = async (_offset, _finegrainOffset) => {
+  const setFrequency = async (_finegrainOffset) => {
     axios({
       method: 'post',
       url: 'http://localhost:1337/serial/frequency',
       data: {
-        midiNumOffset: _offset,
+        midiNumOffset: 0,
         finegrainNumOffset: _finegrainOffset,
         id: id
       }
@@ -100,7 +108,10 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
    */
   useEffect(() => {
     // Do any LFO setting...
-    if (finegrainLfoRef.current && finegrainLfoOffsetRef.current !== 0) {
+    if (
+      offsetTypeRef.current === 'lfo' &&
+      finegrainLfoOffsetRef.current !== 0
+    ) {
       if (
         finegrainLfoOffsetDirRef.current === -1 &&
         finegrainLfoOffsetAmountRef.current <=
@@ -115,13 +126,13 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
         finegrainLfoOffsetDirRef.current = -1;
       }
       finegrainLfoOffsetAmountRef.current += finegrainLfoOffsetDirRef.current;
-      setFrequency(midiOffsetRef.current, finegrainLfoOffsetAmountRef.current)
+      setFrequency(finegrainLfoOffsetAmountRef.current)
         .then((res) => {})
         .catch((err) => {
           console.log('got error', err);
         });
     } else if (
-      finegrainNoiseyLfoRef.current &&
+      offsetTypeRef.current === 'noisey' &&
       finegrainLfoOffsetRef.current !== 0
     ) {
       if (
@@ -140,14 +151,23 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
         finegrainLfoOffsetDirRef.current = Math.random() < 0.5 ? 1 : -1;
       }
       finegrainLfoOffsetAmountRef.current += finegrainLfoOffsetDirRef.current;
-      setFrequency(midiOffsetRef.current, finegrainLfoOffsetAmountRef.current)
+      setFrequency(finegrainLfoOffsetAmountRef.current)
+        .then((res) => {})
+        .catch((err) => {
+          console.log('got error', err);
+        });
+    } else {
+      setFrequency(finegrainOffsetRef.current)
         .then((res) => {})
         .catch((err) => {
           console.log('got error', err);
         });
     }
     // Do any amplitude settings...
-    if (amplitudeLfoRef.current && amplitudeOffsetRef.current !== 0) {
+    if (
+      amplitudeTypeRef.current === 'lfo' &&
+      amplitudeOffsetRef.current !== 0
+    ) {
       if (
         Math.abs(amplitudeRef.current) +
           Math.abs(amplitudeOffsetAmountRef.current) >=
@@ -157,7 +177,7 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
       }
       amplitudeOffsetAmountRef.current += amplitudeOffsetDirRef.current;
     } else if (
-      amplitudeNoiseyLfoRef.current &&
+      amplitudeTypeRef.current === 'noisey' &&
       amplitudeOffsetRef.current !== 0
     ) {
       if (
@@ -190,7 +210,6 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
    * BPM changes
    */
   useEffect(() => {
-    setLocalBpm(bpm);
     bpmRef.current = bpm;
     // console.log('changed the bpm i guess', bpm);
     if (transportRef.current) {
@@ -202,18 +221,6 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
       }, (60 / bpm) * 1000);
     }
   }, [bpm]);
-  useEffect(() => {
-    bpmRef.current = localBpm;
-    console.log('changed the bpm i guess', localBpm);
-    if (transportRef.current) {
-      clearInterval(transportRef.current);
-      transportRef.current = null;
-      transportRef.current = setInterval(() => {
-        activeTickRef.current = (activeTickRef.current + 1) % 16;
-        setActiveTick(activeTickRef.current);
-      }, (60 / localBpm) * 1000);
-    }
-  }, [localBpm]);
   /**
    * Amplitude changes
    */
@@ -230,31 +237,10 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
    * offset changes
    */
   useEffect(() => {
-    midiOffsetRef.current = midiOffset;
-    console.log(
-      'offsets!!!',
-      midiOffsetRef.current,
-      finegrainOffsetRef.current
-    );
-    // Send updated offset to server
-    setFrequency(midiOffsetRef.current, finegrainOffsetRef.current)
-      .then((res) => {})
-      .catch((err) => {
-        console.log('got error', err);
-      });
-  }, [midiOffset]);
-  /**
-   * offset changes
-   */
-  useEffect(() => {
     finegrainOffsetRef.current = finegrainOffset;
-    console.log(
-      'offsets!!!',
-      midiOffsetRef.current,
-      finegrainOffsetRef.current
-    );
+    console.log('offsets!!!', finegrainOffsetRef.current);
     // Send updated offset to server
-    setFrequency(midiOffsetRef.current, finegrainOffsetRef.current)
+    setFrequency(finegrainOffsetRef.current)
       .then((res) => {})
       .catch((err) => {
         console.log('got error', err);
@@ -266,201 +252,233 @@ export default function VoiceFollower({ id, globalToggle, bpm }) {
   useEffect(() => {
     finegrainLfoOffsetRef.current = finegrainLfoOffset;
   }, [finegrainLfoOffset]);
+  /**
+   * Type Togglin'
+   */
+  useEffect(() => {
+    if (typeToggle !== 0) {
+      console.log('should we change something???');
+      if (selected) {
+        if (controlSelected === 0) {
+          if (offsetTypeRef.current === 'normal') {
+            offsetTypeRef.current = 'lfo';
+            setOffsetType(offsetTypeRef.current);
+          } else if (offsetTypeRef.current === 'lfo') {
+            offsetTypeRef.current = 'noisey';
+            setOffsetType(offsetTypeRef.current);
+          } else {
+            offsetTypeRef.current = 'normal';
+            setOffsetType(offsetTypeRef.current);
+          }
+        } else {
+          if (amplitudeTypeRef.current === 'normal') {
+            amplitudeTypeRef.current = 'lfo';
+            setAmplitudeType(amplitudeTypeRef.current);
+          } else if (amplitudeTypeRef.current === 'lfo') {
+            amplitudeTypeRef.current = 'noisey';
+            setAmplitudeType(amplitudeTypeRef.current);
+          } else {
+            amplitudeTypeRef.current = 'normal';
+            setAmplitudeType(amplitudeTypeRef.current);
+          }
+        }
+      }
+    }
+  }, [typeToggle]);
+  /**
+   * OFFSET/AMP TOGGLIN'
+   */
+  useEffect(() => {
+    if (firstKnobDown !== 0) {
+      console.log('turn it down');
+      if (selected) {
+        if (controlSelected === 0) {
+          setFinegrainOffset(finegrainOffsetRef.current - 1);
+        } else {
+          console.log(amplitudeRef.current);
+          setAmplitude(-amplitudeRef.current + 7 - 1);
+        }
+      }
+    }
+  }, [firstKnobDown]);
+  useEffect(() => {
+    if (firstKnobUp !== 0) {
+      console.log('turn it up');
+      if (selected) {
+        if (controlSelected === 0) {
+          setFinegrainOffset(finegrainOffsetRef.current + 1);
+        } else {
+          setAmplitude(-amplitudeRef.current + 7 + 1);
+        }
+      }
+    }
+  }, [firstKnobUp]);
+  /**
+   * LFO TOGGLIN'
+   */
+  useEffect(() => {
+    if (secondKnobDown !== 0) {
+      if (selected) {
+        if (controlSelected === 0) {
+          setFinegrainLfoOffset(finegrainLfoOffsetRef.current - 1);
+        } else {
+          setAmplitudeOffset(amplitudeOffsetRef.current - 1);
+        }
+      }
+    }
+  }, [secondKnobDown]);
+  useEffect(() => {
+    if (secondKnobUp !== 0) {
+      if (selected) {
+        if (controlSelected === 0) {
+          setFinegrainLfoOffset(finegrainLfoOffsetRef.current + 1);
+        } else {
+          setAmplitudeOffset(amplitudeOffsetRef.current + 1);
+        }
+      }
+    }
+  }, [secondKnobUp]);
   return (
-    <main className="h-auto flex flex-col m-3 p-3 border border-black">
-      <div className="w-full flex justify-items-between pb-1 mb-6 border-b border-black">
-        <h1 className="text-xl font-bold">voice {id}</h1>
+    <main
+      className={`h-auto flex flex-col border border-black`}
+      style={{
+        backgroundColor: selected ? '#cacaca' : ''
+      }}
+    >
+      <div
+        className="w-full flex justify-items-between border-b border-black"
+        style={{
+          display: !selected ? 'none' : 'block'
+        }}
+      >
+        <h1 className="unit-header">voice {id}</h1>
       </div>
       <div className="flex w-full">
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
-          <input
-            type="range"
-            name="offset"
-            min={1}
-            max={1080}
-            step="1"
-            value={localBpm}
-            className="w-full"
-            onChange={(e) => {
-              setLocalBpm(parseInt(e.target.value));
-            }}
-          />
-          <label htmlFor="offset" className="mb-3">
-            BPM: {localBpm}
-          </label>
-        </div>
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
-          <input
-            type="range"
-            name="offset"
-            min={-10}
-            max={10}
-            step="1"
-            value={finegrainOffset}
-            className="w-full"
-            onChange={(e) => {
-              console.log('we should change...');
-              setFinegrainOffset(parseInt(e.target.value));
-            }}
-          />
-          <label htmlFor="offset" className="mb-3">
-            Finegrain offset: {finegrainOffset}
-          </label>
-          <fieldset className="flex flex-col">
-            <div className="flex justify-items-center items-center">
-              <input
-                type="radio"
-                id={`finegrain-normal-${id}`}
-                name={`finegrain-val-${id}`}
-                onChange={() => {
-                  finegrainLfoRef.current = false;
-                  finegrainNoiseyLfoRef.current = false;
-                }}
-              />
-              <label className="ml-2" htmlFor={`finegrain-normal-${id}`}>
-                "Normal"
-              </label>
-            </div>
-            <input
-              type="range"
-              name="lfoOffset"
-              min={0}
-              max={10}
-              step="1"
-              value={finegrainLfoOffset}
-              className="w-full"
-              onChange={(e) => {
-                console.log('we should change...');
-                setFinegrainLfoOffset(parseInt(e.target.value));
+        <div className="w-[50%] px-1 flex flex-col">
+          <fieldset className="text-center">
+            <button
+              className="bg-neutral-400"
+              style={{
+                backgroundColor:
+                  selected && controlSelected === 0 ? '#f56500' : ''
               }}
-            />
-            <label htmlFor="offset" className="mb-3">
-              Finegrain LFO offset: {finegrainLfoOffset}
-            </label>
-            <div className="flex justify-items-center items-center">
-              <input
-                type="radio"
-                id={`finegrain-lfo-${id}`}
-                name={`finegrain-val-${id}`}
-                onChange={() => {
-                  finegrainNoiseyLfoRef.current = false;
-                  finegrainLfoRef.current = true;
-                }}
-              />
-              <label className="ml-2" htmlFor={`finegrain-lfo-${id}`}>
-                LFO
-              </label>
-            </div>
-            <div className="flex justify-items-center items-center">
-              <input
-                type="radio"
-                id={`finegrain-noisey-${id}`}
-                name={`finegrain-val-${id}`}
-                onChange={() => {
-                  finegrainLfoRef.current = false;
-                  finegrainNoiseyLfoRef.current = true;
-                }}
-              />
-              <label className="ml-2" htmlFor={`finegrain-noisey-${id}`}>
-                Noisey LFO
-              </label>
-            </div>
-          </fieldset>
-        </div>
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
-          <input
-            type="range"
-            name="offset"
-            min={minOffset}
-            max={maxOffset}
-            value={midiOffset}
-            className="w-full"
-            onChange={(e) => {
-              console.log('we should change...');
-              setMidiOffset(parseInt(e.target.value));
-            }}
-          />
-          <label htmlFor="offset" className="mb-3">
-            Midi Offset: {midiOffset}
-          </label>
-        </div>
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
-          <input
-            type="range"
-            name="amplitude"
-            min={minAmplitude}
-            max={maxAmplitude}
-            value={amplitude}
-            step="1"
-            className="w-full"
-            onChange={(e) => {
-              console.log('we should change...');
-              setAmplitude(parseInt(e.target.value));
-            }}
-          />
-          <label htmlFor="amplitude" className="mb-3">
-            Amplitude: {amplitude}
-          </label>
-          <fieldset className="flex flex-col w-full">
-            <div className="flex justify-items-center items-center">
-              <input
-                type="radio"
-                id={`amplitude-normal-${id}`}
-                name={`amplitude-val-${id}`}
-                onChange={() => {
-                  amplitudeLfoRef.current = false;
-                  amplitudeNoiseyLfoRef.current = false;
-                }}
-              />
-              <label className="ml-2" htmlFor={`amplitude-normal-${id}`}>
-                "Normal"
-              </label>
-            </div>
-            <input
-              type="range"
-              name="amplitudeLfo"
-              min={0}
-              max={15}
-              value={amplitudeOffset}
-              step="1"
-              className="w-full"
-              onChange={(e) => {
-                console.log('we should change...');
-                setAmplitudeOffset(parseInt(e.target.value));
+              onClick={() => {
+                if (offsetTypeRef.current === 'normal') {
+                  offsetTypeRef.current = 'lfo';
+                  setOffsetType(offsetTypeRef.current);
+                } else if (offsetTypeRef.current === 'lfo') {
+                  offsetTypeRef.current = 'noisey';
+                  setOffsetType(offsetTypeRef.current);
+                } else {
+                  offsetTypeRef.current = 'normal';
+                  setOffsetType(offsetTypeRef.current);
+                }
               }}
-            />
-            <label htmlFor="amplitude" className="mb-3">
-              Amplitude Offset: {amplitudeOffset}
-            </label>
-            <div className="flex justify-items-center items-center">
-              <input
-                type="radio"
-                id={`amplitude-lfo-${id}`}
-                name={`amplitude-val-${id}`}
-                onChange={() => {
-                  amplitudeNoiseyLfoRef.current = false;
-                  amplitudeLfoRef.current = true;
-                }}
-              />
-              <label className="ml-2" htmlFor={`amplitude-lfo-${id}`}>
-                LFO
-              </label>
-            </div>
-            <div className="flex justify-items-center items-center">
-              <input
-                type="radio"
-                id={`amplitude-noisey-${id}`}
-                name={`amplitude-val-${id}`}
-                onChange={() => {
-                  amplitudeLfoRef.current = false;
-                  amplitudeNoiseyLfoRef.current = true;
-                }}
-              />
-              <label className="ml-2" htmlFor={`amplitude-noisey-${id}`}>
-                Noisey LFO
-              </label>
-            </div>
+            >
+              {offsetType}
+            </button>
           </fieldset>
+          <div className="w-[100%] mt-3 flex flex-col justify-items-start">
+            <div className="w-[100%] flex flex-col self-start">
+              <input
+                type="range"
+                name="offset"
+                min={-10}
+                max={10}
+                step="1"
+                value={finegrainOffset}
+                className="w-full"
+                onChange={(e) => {
+                  console.log('we should change...');
+                  setFinegrainOffset(parseInt(e.target.value));
+                }}
+              />
+              <label htmlFor="offset" className="mb-1">
+                offset: {finegrainOffset}
+              </label>
+            </div>
+            <div className="w-[100%] flex flex-col">
+              <input
+                type="range"
+                name="lfoOffset"
+                min={0}
+                max={10}
+                step="1"
+                value={finegrainLfoOffset}
+                className="w-full"
+                onChange={(e) => {
+                  console.log('we should change...');
+                  setFinegrainLfoOffset(parseInt(e.target.value));
+                }}
+              />
+              <label htmlFor="offset" className="mb-1">
+                lfo: {finegrainLfoOffset}
+              </label>
+            </div>
+          </div>
+        </div>
+        <div className="w-[50%] px-1 flex flex-col justify-items-center items-center">
+          <fieldset className="text-center">
+            <button
+              className="bg-neutral-400"
+              style={{
+                backgroundColor:
+                  selected && controlSelected === 1 ? '#f56500' : ''
+              }}
+              onClick={() => {
+                if (amplitudeTypeRef.current === 'normal') {
+                  amplitudeTypeRef.current = 'lfo';
+                  setAmplitudeType(amplitudeTypeRef.current);
+                } else if (amplitudeTypeRef.current === 'lfo') {
+                  amplitudeTypeRef.current = 'noisey';
+                  setAmplitudeType(amplitudeTypeRef.current);
+                } else {
+                  amplitudeTypeRef.current = 'normal';
+                  setAmplitudeType(amplitudeTypeRef.current);
+                }
+              }}
+            >
+              {amplitudeType}
+            </button>
+          </fieldset>
+          <div className="w-[100%] mt-3 flex flex-col justify-items-start">
+            <div className="w-[100%] flex flex-col self-start">
+              <input
+                type="range"
+                name="amplitude"
+                min={minAmplitude}
+                max={maxAmplitude}
+                value={amplitude}
+                step="1"
+                className="w-full"
+                onChange={(e) => {
+                  console.log('we should change...');
+                  setAmplitude(parseInt(e.target.value));
+                }}
+              />
+              <label htmlFor="amplitude" className="mb-1">
+                amp: {amplitude}
+              </label>
+            </div>
+            <div className="w-[100%] flex flex-col self-start">
+              <input
+                type="range"
+                name="amplitudeLfo"
+                min={0}
+                max={15}
+                value={amplitudeOffset}
+                step="1"
+                className="w-full"
+                onChange={(e) => {
+                  console.log('we should change...');
+                  setAmplitudeOffset(parseInt(e.target.value));
+                }}
+              />
+              <label htmlFor="amplitude" className="mb-1">
+                lfo: {amplitudeOffset}
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </main>

@@ -9,7 +9,7 @@ const { numToHex, midiToNum, numToMidi } = require('../helpers/converters');
 class SerialComms {
   constructor() {
     this.port = new SerialPort({
-      path: '/dev/tty.usbserial-110',
+      path: '/dev/tty.usbmodem101',
       baudRate: 9600,
       autoOpen: false
     });

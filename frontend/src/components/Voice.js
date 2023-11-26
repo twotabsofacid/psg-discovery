@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-const maxBpm = 360;
+const maxBpm = 1080;
 const minNum = 0;
 const maxNum = 1023;
 const minMidi = 21;
@@ -8,13 +8,23 @@ const maxMidi = 127;
 const minAmplitude = -8;
 const maxAmplitude = 7;
 
-export default function Voice({ id, globalToggle, bpm }) {
+export default function Voice({
+  id,
+  globalToggle,
+  controlSelected,
+  selected,
+  firstKnobDown,
+  firstKnobUp,
+  secondKnobDown,
+  secondKnobUp,
+  bpm,
+  setBpm
+}) {
   const [activeTick, setActiveTick] = useState(0);
   const [numToSend, setNumToSend] = useState((minNum + maxNum) / 2);
   const [midi, setMidi] = useState(60);
   const [amplitude, setAmplitude] = useState(0);
   const amplitudeRef = useRef(7);
-  const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
   const numToSendRef = useRef((minNum + maxNum) / 2);
   const activeTickRef = useRef(0);
@@ -158,18 +168,66 @@ export default function Voice({ id, globalToggle, bpm }) {
     };
     navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
   }, []);
+  /**
+   * OFFSET/AMP TOGGLIN'
+   */
+  useEffect(() => {
+    if (firstKnobDown !== 0) {
+      console.log('turn it down');
+      if (selected) {
+        bpmRef.current--;
+        setBpm(bpmRef.current);
+      }
+    }
+  }, [firstKnobDown]);
+  useEffect(() => {
+    if (firstKnobUp !== 0) {
+      console.log('turn it up');
+      if (selected) {
+        bpmRef.current++;
+        setBpm(bpmRef.current);
+      }
+    }
+  }, [firstKnobUp]);
+  /**
+   * LFO TOGGLIN'
+   */
+  useEffect(() => {
+    if (secondKnobDown !== 0) {
+      if (selected) {
+        setAmplitude(-amplitudeRef.current + 7 - 1);
+      }
+    }
+  }, [secondKnobDown]);
+  useEffect(() => {
+    if (secondKnobUp !== 0) {
+      if (selected) {
+        setAmplitude(-amplitudeRef.current + 7 + 1);
+      }
+    }
+  }, [secondKnobUp]);
   return (
-    <main className="h-auto flex flex-col m-3 p-3 border border-black">
-      <div className="w-full flex justify-items-between pb-1 mb-6 border-b border-black">
-        <h1 className="text-xl font-bold">voice {id}</h1>
+    <main
+      className="h-auto flex flex-col border border-black"
+      style={{
+        backgroundColor: selected ? '#cacaca' : ''
+      }}
+    >
+      <div
+        className="w-full flex justify-items-between border-b border-black"
+        style={{
+          display: !selected ? 'none' : 'block'
+        }}
+      >
+        <h1 className="unit-header">voice {id}</h1>
       </div>
       <div className="flex w-full">
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
-          <div htmlFor="bpm" className="mb-3">
+        <div className="hidden w-[50%] px-3 flex flex-col justify-items-center items-center">
+          <div htmlFor="bpm" className="">
             BPM: {bpm}
           </div>
         </div>
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
+        <div className="hidden w-[50%] px-3 flex flex-col justify-items-center items-center">
           <input
             type="range"
             name="midi"
@@ -183,11 +241,29 @@ export default function Voice({ id, globalToggle, bpm }) {
               setMidi(parseInt(e.target.value));
             }}
           />
-          <label htmlFor="midi" className="mb-3">
+          <label htmlFor="midi" className="">
             Midi: {midi}
           </label>
         </div>
-        <div className="w-[25%] px-3 flex flex-col justify-items-center items-center">
+        <div className="w-[50%] px-3 flex flex-col justify-items-center items-center">
+          <input
+            type="range"
+            name="amplitude"
+            min={0}
+            max={maxBpm}
+            value={bpm}
+            step="1"
+            className="w-full"
+            onChange={(e) => {
+              console.log('we should change...');
+              setBpm(parseInt(e.target.value));
+            }}
+          />
+          <label htmlFor="bpm" className="">
+            Bpm: {bpm}
+          </label>
+        </div>
+        <div className="w-[50%] px-3 flex flex-col justify-items-center items-center">
           <input
             type="range"
             name="amplitude"
@@ -201,7 +277,7 @@ export default function Voice({ id, globalToggle, bpm }) {
               setAmplitude(parseInt(e.target.value));
             }}
           />
-          <label htmlFor="amplitude" className="mb-3">
+          <label htmlFor="amplitude" className="">
             Amplitude: {amplitude}
           </label>
         </div>

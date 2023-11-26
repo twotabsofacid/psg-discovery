@@ -17,6 +17,18 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  font-family: monospace;
+  font-size:12px;
+}
+
+.screen-container {
+  width: 256px;
+  height: 320px;
+}
+
+.unit-header {
+  font-weight: bold;
+  font-size: 16px;
 }
 
 input[type="checkbox"].tick {
@@ -109,4 +121,25 @@ input[type="radio"]::before {
 
 input[type="radio"]:checked::before {
   transform: scale(1);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #222;
+  height: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look */
+  appearance: none;
+  margin-top: -4px; /* Centers thumb on the track */
+  background-color: #222;
+  height: 10px;
+  width: 2px;
 }
