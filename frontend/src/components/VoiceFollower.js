@@ -278,9 +278,6 @@ export default function VoiceFollower({
           >
             {transportActive ? 'Stop' : 'Start'}
           </button> */}
-          <div htmlFor="bpm" className="mb-3">
-            BPM: {bpm}
-          </div>
           <input
             type="range"
             name="offset"
