@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import Voice from '@/components/Voice';
 import VoiceFollower from '@/components/VoiceFollower';
@@ -15,24 +15,18 @@ const wait = (timeout) => {
 };
 
 export default function Home() {
+  const [checkboxes, setCheckboxes] = useState([]);
   const [globalToggle, setGlobalToggle] = useState(false);
-  const [download, setDownload] = useState(0);
-  const [dataVoiceOne, setDataVoiceOne] = useState(null);
-  const [dataVoiceTwo, setDataVoiceTwo] = useState(null);
-  const [dataVoiceThree, setDataVoiceThree] = useState(null);
-  const [dataNoise, setDataNoise] = useState(null);
   const [bpm, setBpm] = useState(maxBpm / 2);
-  const downloadRef = useRef(null);
+  const [voiceOneStepOffset, setVoiceOneStepOffset] = useState(0);
+  const [voiceTwoStepOffset, setVoiceTwoStepOffset] = useState(0);
   const dlAnchorRef = useRef(null);
-  const onReaderLoad = (e) => {
-    if (e.target.result) {
-      var obj = JSON.parse(e.target.result);
-      setDataVoiceOne(obj[0]);
-      setDataVoiceTwo(obj[1]);
-      setDataVoiceThree(obj[2]);
-      setDataNoise(obj[3]);
+  const checkboxesRef = useRef([]);
+  useEffect(() => {
+    if (checkboxes) {
+      checkboxesRef.current = checkboxes;
     }
-  };
+  }, [checkboxes]);
   return (
     <main className="flex flex-col">
       <section className="flex m-3 items-center justify-center">
@@ -52,46 +46,6 @@ export default function Home() {
         >
           Stop All
         </button>
-        <button
-          className="p-3 bg-blue-200 mx-3"
-          onClick={async () => {
-            console.log('we fucking click this..');
-            downloadRef.current = downloadRef.current + 1;
-            setDownload(downloadRef.current);
-            await wait(1000);
-            axios({
-              method: 'get',
-              url: 'http://localhost:1337/data'
-            })
-              .then((res) => {
-                console.log(res.data);
-                var dataStr =
-                  'data:text/json;charset=utf-8,' +
-                  encodeURIComponent(JSON.stringify(res.data.data));
-                dlAnchorRef.current.setAttribute('href', dataStr);
-                dlAnchorRef.current.setAttribute('download', 'sequence.json');
-                dlAnchorRef.current.click();
-              })
-              .catch((err) => {
-                console.log('we got error', err);
-              });
-          }}
-        >
-          Download
-        </button>
-        <input
-          type="file"
-          id="myFile"
-          name="filename"
-          className="p-3 bg-yellow-200 mx-3"
-          onChange={(e) => {
-            var reader = new FileReader();
-            reader.onload = onReaderLoad;
-            if (typeof e.target.files[0] === 'object') {
-              reader.readAsText(e.target.files[0]);
-            }
-          }}
-        />
         <input
           type="range"
           name="bpm"
@@ -106,33 +60,98 @@ export default function Home() {
           BPM: {bpm}
         </label>
       </section>
+      <section className="flex module-screen">
+        <div className="sequencer">
+          {[...Array(6).keys()].map((item, index) => {
+            return (
+              <span
+                key={index}
+                className="background-line"
+                style={{
+                  top: `${index * 8 * 2 + 6}px`,
+                  left: 0,
+                  width: '100%',
+                  height: '2px'
+                }}
+              ></span>
+            );
+          })}
+          {[...Array(16).keys()].map((item, index) => {
+            return (
+              <span
+                key={index}
+                className="background-line"
+                style={{
+                  top: 0,
+                  left: `${index * 8 * 2 + 6}px`,
+                  height: '100%',
+                  width: '2px'
+                }}
+              ></span>
+            );
+          })}
+          {[...Array(3).keys()].map((item, index) => {
+            const colorIndex = index;
+            return (
+              <div className="dot-wrapper absolute w-full h-full">
+                {checkboxes.map((boxRow, index) => {
+                  const rowIndex = index;
+                  return (
+                    <div key={rowIndex}>
+                      {boxRow.map((box, index) => {
+                        const colIndex = index;
+                        return (
+                          <span
+                            key={box.value}
+                            className={`absolute sequencer-dot dot-${colorIndex} dot-${
+                              box.on ? 'active' : 'inactive'
+                            }`}
+                            style={{
+                              top: `${colIndex * 8 * 2 + 6 - 5}px`,
+                              left: `${rowIndex * 8 * 2 + 6 - 5}px`,
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '50%',
+                              transform:
+                                colorIndex === 1
+                                  ? `${1}px`
+                                  : colorIndex === 2
+                                  ? `${2}px`
+                                  : 'none' // CHANGE THIS!!!
+                            }}
+                          ></span>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </section>
       <section className="flex flex-col">
         <Voice
           id={0}
+          checkboxes={checkboxes}
+          setCheckboxes={setCheckboxes}
           globalToggle={globalToggle}
-          download={download}
-          data={dataVoiceOne}
           bpm={bpm}
         />
         <VoiceFollower
           id={1}
+          checkboxes={checkboxes}
           globalToggle={globalToggle}
-          download={download}
-          data={dataVoiceTwo}
+          stepOffset={voiceOneStepOffset}
+          setStepOffset={setVoiceOneStepOffset}
           bpm={bpm}
         />
         <VoiceFollower
           id={2}
+          checkboxes={checkboxes}
           globalToggle={globalToggle}
-          download={download}
-          data={dataVoiceThree}
-          bpm={bpm}
-        />
-        <Noise
-          id={3}
-          globalToggle={globalToggle}
-          download={download}
-          data={dataNoise}
+          stepOffset={voiceTwoStepOffset}
+          setStepOffset={setVoiceTwoStepOffset}
           bpm={bpm}
         />
       </section>

@@ -6,10 +6,14 @@ const maxNum = 1023;
 const minMidi = 21;
 const maxMidi = 127;
 
-export default function Voice({ id, globalToggle, download, data, bpm }) {
-  const [checkboxes, setCheckboxes] = useState([]);
+export default function Voice({
+  id,
+  globalToggle,
+  checkboxes,
+  setCheckboxes,
+  bpm
+}) {
   const [activeTick, setActiveTick] = useState(0);
-  const [transportActive, setTransportActive] = useState(false);
   const [numToSend, setNumToSend] = useState((minNum + maxNum) / 2);
   const [midi, setMidi] = useState(60);
   const checkboxesRef = useRef([]);
@@ -17,30 +21,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
   const numToSendRef = useRef((minNum + maxNum) / 2);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
-  const toggleTransport = () => {
-    if (transportRef.current) {
-      setTransportActive(false);
-      clearInterval(transportRef.current);
-      setActiveTick(0);
-      activeTickRef.current = 0;
-      transportRef.current = null;
-      setTimeout(() => {
-        setVolume(15)
-          .then((data) => {
-            // console.log(data);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      }, 500);
-    } else {
-      setTransportActive(true);
-      transportRef.current = setInterval(() => {
-        activeTickRef.current = (activeTickRef.current + 1) % 16;
-        setActiveTick(activeTickRef.current);
-      }, (60 / bpmRef.current) * 1000);
-    }
-  };
   const toggleBox = (boxValue) => {
     let x = parseInt(boxValue.split(',')[0]);
     let y = parseInt(boxValue.split(',')[1]);
@@ -70,7 +50,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
   };
   useEffect(() => {
     if (!globalToggle) {
-      setTransportActive(false);
       clearInterval(transportRef.current);
       setActiveTick(0);
       activeTickRef.current = 0;
@@ -85,7 +64,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
           });
       }, 500);
     } else {
-      setTransportActive(true);
       transportRef.current = setInterval(() => {
         activeTickRef.current = (activeTickRef.current + 1) % 16;
         setActiveTick(activeTickRef.current);
@@ -174,36 +152,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
     setNumToSend(newNumToSend);
   }, [midi]);
   /**
-   * DOWNLOAD
-   * Store stuff in storage on back end
-   */
-  useEffect(() => {
-    axios({
-      method: 'post',
-      url: 'http://localhost:1337/data/store',
-      data: {
-        id: id,
-        sequence: checkboxesRef.current
-      }
-    })
-      .then((res) => {
-        // console.log(res);
-      })
-      .catch((err) => {
-        console.log('error', err);
-      });
-  }, [download]);
-  /**
-   * DATA
-   * Load in data
-   */
-  useEffect(() => {
-    if (data) {
-      checkboxesRef.current = data;
-      setCheckboxes([...checkboxesRef.current]);
-    }
-  }, [data]);
-  /**
    * Create boxes, set up midi stuff
    */
   useEffect(() => {
@@ -256,14 +204,6 @@ export default function Voice({ id, globalToggle, download, data, bpm }) {
       </div>
       <div className="flex w-full">
         <div className="w-[20%] px-3 flex flex-col justify-items-center items-center">
-          {/* <button
-            onClick={toggleTransport}
-            className={`p-3 mb-3 ${
-              transportActive ? 'bg-red-200' : 'bg-green-200'
-            }`}
-          >
-            {transportActive ? 'Stop' : 'Start'}
-          </button> */}
           <div htmlFor="bpm" className="mb-3">
             BPM: {bpm}
           </div>
