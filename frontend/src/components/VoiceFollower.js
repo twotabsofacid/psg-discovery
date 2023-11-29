@@ -31,10 +31,10 @@ export default function VoiceFollower({
   const [finegrainLfoOffset, setFinegrainLfoOffset] = useState(0);
   const [amplitude, setAmplitude] = useState(0);
   const [amplitudeOffset, setAmplitudeOffset] = useState(0);
-  const [offsetType, setOffsetType] = useState('normal');
-  const [amplitudeType, setAmplitudeType] = useState('normal');
-  const offsetTypeRef = useRef('normal');
-  const amplitudeTypeRef = useRef('normal');
+  const [offsetType, setOffsetType] = useState('static');
+  const [amplitudeType, setAmplitudeType] = useState('static');
+  const offsetTypeRef = useRef('static');
+  const amplitudeTypeRef = useRef('static');
   const amplitudeRef = useRef(7);
   const amplitudeOffsetRef = useRef(0);
   const amplitudeOffsetAmountRef = useRef(0);
@@ -260,25 +260,25 @@ export default function VoiceFollower({
       console.log('should we change something???');
       if (selected) {
         if (controlSelected === 0) {
-          if (offsetTypeRef.current === 'normal') {
+          if (offsetTypeRef.current === 'static') {
             offsetTypeRef.current = 'lfo';
             setOffsetType(offsetTypeRef.current);
           } else if (offsetTypeRef.current === 'lfo') {
             offsetTypeRef.current = 'noisey';
             setOffsetType(offsetTypeRef.current);
           } else {
-            offsetTypeRef.current = 'normal';
+            offsetTypeRef.current = 'static';
             setOffsetType(offsetTypeRef.current);
           }
         } else {
-          if (amplitudeTypeRef.current === 'normal') {
+          if (amplitudeTypeRef.current === 'static') {
             amplitudeTypeRef.current = 'lfo';
             setAmplitudeType(amplitudeTypeRef.current);
           } else if (amplitudeTypeRef.current === 'lfo') {
             amplitudeTypeRef.current = 'noisey';
             setAmplitudeType(amplitudeTypeRef.current);
           } else {
-            amplitudeTypeRef.current = 'normal';
+            amplitudeTypeRef.current = 'static';
             setAmplitudeType(amplitudeTypeRef.current);
           }
         }
@@ -363,14 +363,14 @@ export default function VoiceFollower({
                   selected && controlSelected === 0 ? '#f56500' : ''
               }}
               onClick={() => {
-                if (offsetTypeRef.current === 'normal') {
+                if (offsetTypeRef.current === 'static') {
                   offsetTypeRef.current = 'lfo';
                   setOffsetType(offsetTypeRef.current);
                 } else if (offsetTypeRef.current === 'lfo') {
                   offsetTypeRef.current = 'noisey';
                   setOffsetType(offsetTypeRef.current);
                 } else {
-                  offsetTypeRef.current = 'normal';
+                  offsetTypeRef.current = 'static';
                   setOffsetType(offsetTypeRef.current);
                 }
               }}
@@ -426,14 +426,14 @@ export default function VoiceFollower({
                   selected && controlSelected === 1 ? '#f56500' : ''
               }}
               onClick={() => {
-                if (amplitudeTypeRef.current === 'normal') {
+                if (amplitudeTypeRef.current === 'static') {
                   amplitudeTypeRef.current = 'lfo';
                   setAmplitudeType(amplitudeTypeRef.current);
                 } else if (amplitudeTypeRef.current === 'lfo') {
                   amplitudeTypeRef.current = 'noisey';
                   setAmplitudeType(amplitudeTypeRef.current);
                 } else {
-                  amplitudeTypeRef.current = 'normal';
+                  amplitudeTypeRef.current = 'static';
                   setAmplitudeType(amplitudeTypeRef.current);
                 }
               }}
