@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-const maxBpm = 360;
 const minStepOffset = 0;
 const maxStepOffset = 16;
 
@@ -10,16 +9,15 @@ export default function VoiceFollower({
   checkboxes,
   bpm,
   stepOffset,
-  setStepOffset
+  setStepOffset,
+  activeTickChange
 }) {
   const [activeTick, setActiveTick] = useState(0);
   const [finegrainOffset, setFinegrainOffset] = useState(0);
   const checkboxesRef = useRef([]);
-  const bpmRef = useRef(maxBpm / 2);
   const finegrainOffsetRef = useRef(0);
   const stepOffsetRef = useRef(0);
   const activeTickRef = useRef(0);
-  const transportRef = useRef(null);
   const setVolume = async (level) => {
     return new Promise((resolve, reject) => {
       axios({
@@ -40,40 +38,18 @@ export default function VoiceFollower({
         });
     });
   };
-  useEffect(() => {
-    if (!globalToggle) {
-      clearInterval(transportRef.current);
-      setActiveTick(0);
-      activeTickRef.current = 0;
-      transportRef.current = null;
-      setTimeout(() => {
-        setVolume(15)
-          .then((data) => {
-            // console.log(data);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      }, 500);
-    } else {
-      setTimeout(() => {
-        transportRef.current = setInterval(() => {
-          activeTickRef.current = (activeTickRef.current + 1) % 16;
-          setActiveTick(activeTickRef.current);
-        }, (60 / bpmRef.current) * 1000);
-      }, stepOffsetRef.current * (60 / bpmRef.current) * 1000);
-    }
-  }, [globalToggle]);
   /**
    * SEQUENCER TICKS
    */
   useEffect(() => {
-    const volToPlay = checkboxesRef.current[activeTick]?.find((box) => {
-      return box.on;
-    });
+    activeTickRef.current = activeTickChange;
+    const volToPlay = checkboxesRef.current[activeTickRef.current]?.find(
+      (box) => {
+        return box.on;
+      }
+    );
+    let volToPlayMapped = 15;
     if (volToPlay) {
-      // TODO SEND AXIOS POST REQUEST TO BACK END,
-      // PLAY VOICE `ID` FREQ AT VOL
       let volToPlayMapped =
         volToPlay.row === 0
           ? 0
@@ -86,6 +62,9 @@ export default function VoiceFollower({
           : volToPlay.row === 4
           ? 8
           : 15;
+    }
+    setTimeout(() => {
+      setActiveTick(activeTickChange);
       setVolume(volToPlayMapped)
         .then((data) => {
           // console.log(data);
@@ -93,23 +72,8 @@ export default function VoiceFollower({
         .catch((err) => {
           console.log(err);
         });
-    }
-  }, [activeTick]);
-  /**
-   * BPM changes
-   */
-  useEffect(() => {
-    bpmRef.current = bpm;
-    // console.log('changed the bpm i guess', bpm);
-    if (transportRef.current) {
-      clearInterval(transportRef.current);
-      transportRef.current = null;
-      transportRef.current = setInterval(() => {
-        activeTickRef.current = (activeTickRef.current + 1) % 16;
-        setActiveTick(activeTickRef.current);
-      }, (60 / bpm) * 1000);
-    }
-  }, [bpm]);
+    }, (60 / bpm) * 1000 * stepOffsetRef.current);
+  }, [activeTickChange]);
   /**
    * offset changes
    */

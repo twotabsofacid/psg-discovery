@@ -15,6 +15,7 @@ const wait = (timeout) => {
 };
 
 export default function Home() {
+  const [activeTick, setActiveTick] = useState(0);
   const [checkboxes, setCheckboxes] = useState([]);
   const [globalToggle, setGlobalToggle] = useState(false);
   const [bpm, setBpm] = useState(maxBpm / 2);
@@ -154,6 +155,8 @@ export default function Home() {
           setCheckboxes={setCheckboxes}
           globalToggle={globalToggle}
           bpm={bpm}
+          activeTick={activeTick}
+          setActiveTick={setActiveTick}
         />
         <VoiceFollower
           id={1}
@@ -162,6 +165,7 @@ export default function Home() {
           stepOffset={voiceOneStepOffset}
           setStepOffset={setVoiceOneStepOffset}
           bpm={bpm}
+          activeTickChange={activeTick}
         />
         <VoiceFollower
           id={2}
@@ -170,6 +174,7 @@ export default function Home() {
           stepOffset={voiceTwoStepOffset}
           setStepOffset={setVoiceTwoStepOffset}
           bpm={bpm}
+          activeTickChange={activeTick}
         />
       </section>
       <a href="" ref={dlAnchorRef} className="hidden">

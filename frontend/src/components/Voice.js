@@ -11,9 +11,10 @@ export default function Voice({
   globalToggle,
   checkboxes,
   setCheckboxes,
-  bpm
+  bpm,
+  activeTick,
+  setActiveTick
 }) {
-  const [activeTick, setActiveTick] = useState(0);
   const [numToSend, setNumToSend] = useState((minNum + maxNum) / 2);
   const [midi, setMidi] = useState(60);
   const checkboxesRef = useRef([]);
@@ -66,6 +67,7 @@ export default function Voice({
     } else {
       transportRef.current = setInterval(() => {
         activeTickRef.current = (activeTickRef.current + 1) % 16;
+        console.log('active tick set to', activeTickRef.current);
         setActiveTick(activeTickRef.current);
       }, (60 / bpmRef.current) * 1000);
     }
