@@ -93,33 +93,50 @@ export default function Home() {
           {[...Array(3).keys()].map((item, index) => {
             const colorIndex = index;
             return (
-              <div className="dot-wrapper absolute w-full h-full">
-                {checkboxes.map((boxRow, index) => {
-                  const rowIndex = index;
+              <div
+                key={colorIndex}
+                className="absolute w-[200%] h-full left-[-100%]"
+                style={{
+                  transform:
+                    colorIndex === 1
+                      ? `translateX(${voiceOneStepOffset * 8 * 2}px)`
+                      : colorIndex === 2
+                      ? `translateX(${voiceTwoStepOffset * 8 * 2}px)`
+                      : 'none'
+                }}
+              >
+                {[...Array(2).keys()].map((item, index) => {
+                  const transformIndex = index;
                   return (
-                    <div key={rowIndex}>
-                      {boxRow.map((box, index) => {
-                        const colIndex = index;
+                    <div
+                      key={transformIndex}
+                      className={`dot-wrapper absolute w-[50%] h-full ${
+                        transformIndex === 0 ? 'left-0' : 'left-[50%]'
+                      }`}
+                    >
+                      {checkboxes.map((boxRow, index) => {
+                        const rowIndex = index;
                         return (
-                          <span
-                            key={box.value}
-                            className={`absolute sequencer-dot dot-${colorIndex} dot-${
-                              box.on ? 'active' : 'inactive'
-                            }`}
-                            style={{
-                              top: `${colIndex * 8 * 2 + 6 - 5}px`,
-                              left: `${rowIndex * 8 * 2 + 6 - 5}px`,
-                              width: '12px',
-                              height: '12px',
-                              borderRadius: '50%',
-                              transform:
-                                colorIndex === 1
-                                  ? `${1}px`
-                                  : colorIndex === 2
-                                  ? `${2}px`
-                                  : 'none' // CHANGE THIS!!!
-                            }}
-                          ></span>
+                          <div key={rowIndex}>
+                            {boxRow.map((box, index) => {
+                              const colIndex = index;
+                              return (
+                                <span
+                                  key={box.value}
+                                  className={`absolute sequencer-dot dot-${colorIndex} dot-${
+                                    box.on ? 'active' : 'inactive'
+                                  }`}
+                                  style={{
+                                    top: `${colIndex * 8 * 2 + 6 - 5}px`,
+                                    left: `${rowIndex * 8 * 2 + 6 - 5}px`,
+                                    width: '12px',
+                                    height: '12px',
+                                    borderRadius: '50%'
+                                  }}
+                                ></span>
+                              );
+                            })}
+                          </div>
                         );
                       })}
                     </div>

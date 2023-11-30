@@ -204,9 +204,6 @@ export default function Voice({
       </div>
       <div className="flex w-full">
         <div className="w-[20%] px-3 flex flex-col justify-items-center items-center">
-          <div htmlFor="bpm" className="mb-3">
-            BPM: {bpm}
-          </div>
           <input
             type="range"
             name="midi"
