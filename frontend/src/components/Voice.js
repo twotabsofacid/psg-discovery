@@ -17,15 +17,19 @@ export default function Voice({
 }) {
   const [numToSend, setNumToSend] = useState((minNum + maxNum) / 2);
   const [midi, setMidi] = useState(60);
+  const [manipulateCol, setManipulateCol] = useState(0);
+  const manipulateColRef = useRef(0);
   const checkboxesRef = useRef([]);
   const bpmRef = useRef(maxBpm / 2);
   const numToSendRef = useRef((minNum + maxNum) / 2);
   const activeTickRef = useRef(0);
   const transportRef = useRef(null);
-  const toggleBox = (boxValue) => {
-    let x = parseInt(boxValue.split(',')[0]);
-    let y = parseInt(boxValue.split(',')[1]);
+  const toggleBox = (x, y) => {
     checkboxesRef.current[x][y].on = !checkboxesRef.current[x][y].on;
+    setCheckboxes([...checkboxesRef.current]);
+  };
+  const switchBox = (x, y, on = false) => {
+    checkboxesRef.current[x][y].on = on;
     setCheckboxes([...checkboxesRef.current]);
   };
   const setVolume = async (level) => {
@@ -199,6 +203,48 @@ export default function Voice({
 
     navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
   }, []);
+  useEffect(() => {
+    const press = (e) => {
+      if (e.key === 'z' || e.key === 'x') {
+        if (e.key === 'z') {
+          manipulateColRef.current--;
+          manipulateColRef.current = (manipulateColRef.current + 16) % 16;
+          setManipulateCol(manipulateColRef.current);
+        } else {
+          manipulateColRef.current++;
+          manipulateColRef.current = (manipulateColRef.current + 16) % 16;
+          setManipulateCol(manipulateColRef.current);
+        }
+      } else if (e.key === 'c' || e.key === 'v') {
+        // Find if the col has anything active...
+        const row = checkboxesRef.current[manipulateColRef.current].filter(
+          (item) => {
+            return item.on;
+          }
+        );
+        console.log('anything in row..', row);
+        let moveNum = 5;
+        if (row.length) {
+          moveNum = row[0].row;
+        }
+        if (e.key === 'c') {
+          moveNum++;
+          moveNum = (moveNum + 6) % 6;
+        } else {
+          moveNum--;
+          moveNum = (moveNum + 6) % 6;
+        }
+        for (let i = 0; i < 6; i++) {
+          switchBox(manipulateColRef.current, i, false);
+        }
+        switchBox(manipulateColRef.current, moveNum, true);
+      }
+    };
+    window.addEventListener('keydown', press);
+    return () => {
+      window.removeEventListener('keydown', press);
+    };
+  }, []);
   return (
     <main className="h-auto flex flex-col m-3 p-3 border border-black">
       <div className="w-full flex justify-items-between pb-1 mb-6 border-b border-black">
@@ -228,9 +274,9 @@ export default function Voice({
             return (
               <div
                 key={index}
-                className={`flex flex-col justify-between tick-col ${
+                className={`flex flex-col justify-between tick-col relative ${
                   activeTick === index ? 'bg-blue-300' : ''
-                }`}
+                } ${manipulateCol === index ? 'manipulate' : ''}`}
               >
                 <>
                   {boxRow.map((box) => {
@@ -244,7 +290,10 @@ export default function Voice({
                           activeTick === index ? 'bg-blue-100' : 'bg-white'
                         }`}
                         onChange={(e) => {
-                          toggleBox(box.value);
+                          toggleBox(
+                            box.value.split(',')[0],
+                            box.value.split(',')[1]
+                          );
                         }}
                       ></input>
                     );

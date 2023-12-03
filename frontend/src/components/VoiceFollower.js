@@ -50,7 +50,7 @@ export default function VoiceFollower({
     );
     let volToPlayMapped = 15;
     if (volToPlay) {
-      let volToPlayMapped =
+      volToPlayMapped =
         volToPlay.row === 0
           ? 0
           : volToPlay.row === 1
@@ -172,8 +172,8 @@ export default function VoiceFollower({
                         key={box.value}
                         type="checkbox"
                         value={box.value}
-                        readOnly={true}
                         checked={box.on}
+                        readOnly={true}
                         className={`tick ${
                           activeTick === index ? 'bg-blue-100' : 'bg-white'
                         }`}
