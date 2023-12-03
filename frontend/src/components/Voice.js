@@ -227,7 +227,7 @@ export default function Voice({
             BPM: {bpm}
           </div>
         </div>
-        <div className="hidden w-[50%] px-3 flex flex-col justify-items-center items-center">
+        <div className="w-[50%] px-3 flex flex-col justify-items-center items-center">
           <input
             type="range"
             name="midi"
